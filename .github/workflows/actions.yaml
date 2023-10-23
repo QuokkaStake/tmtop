@@ -1,0 +1,49 @@
+name: test
+on: [push]
+jobs:
+  go-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - uses: actions/setup-go@v2
+        with:
+          go-version: '1.18.2'
+      - run: go version
+      - run: go mod download
+      - run: go build cmd/cosmos-proposals-checker.go
+  go-vet:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - uses: actions/setup-go@v2
+        with:
+          go-version: '1.18.2'
+      - run: go version
+      - run: go mod download
+      - run: go vet ./...
+  golangci:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v2
+        with:
+          args: --timeout 300s
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-go@v2
+        with:
+          go-version: '1.18.2'
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
+      - name: Run tests
+        run: go test -coverprofile coverage.txt -v ./...
+      - name: Download uploader
+        run: curl -Os https://uploader.codecov.io/latest/linux/codecov
+      - name: Make uploader executable
+        run: chmod +x codecov
+      - name: Run uploader
+        run: ./codecov

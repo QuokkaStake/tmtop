@@ -1,0 +1,6 @@
+main
+*.json
+.idea
+cover.out
+tmtop
+dist
