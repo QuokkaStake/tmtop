@@ -22,7 +22,7 @@ func NewAggregator(config configPkg.Config, logger zerolog.Logger) *Aggregator {
 		Config:           config,
 		Logger:           logger.With().Str("component", "aggregator").Logger(),
 		TendermintClient: tendermint.NewRPC(config, logger),
-		DataFetcher:      data_fetcher.NewCosmosDataFetcher(config, logger),
+		DataFetcher:      data_fetcher.GetDataFetcher(config, logger),
 	}
 }
 
