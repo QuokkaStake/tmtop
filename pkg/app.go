@@ -2,9 +2,9 @@ package pkg
 
 import (
 	"github.com/rs/zerolog"
+	"main/pkg/aggregator"
 	configPkg "main/pkg/config"
 	loggerPkg "main/pkg/logger"
-	"main/pkg/tendermint"
 	"main/pkg/types"
 	"main/pkg/view_wrapper"
 	"time"
@@ -14,7 +14,7 @@ type App struct {
 	Logger         zerolog.Logger
 	Version        string
 	Config         configPkg.Config
-	RPC            *tendermint.RPC
+	Aggregator     *aggregator.Aggregator
 	DisplayWrapper *view_wrapper.Wrapper
 }
 
@@ -28,7 +28,7 @@ func NewApp(config configPkg.Config, version string) *App {
 		Logger:         logger,
 		Version:        version,
 		Config:         config,
-		RPC:            tendermint.NewRPC(config, logger),
+		Aggregator:     aggregator.NewAggregator(config, logger),
 		DisplayWrapper: view_wrapper.NewWrapper(logger),
 	}
 }
@@ -56,13 +56,13 @@ func (a *App) GoRefreshConsensus() {
 }
 
 func (a *App) RefreshConsensus() {
-	consensus, validators, err := a.RPC.GetConsensusStateAndValidators()
+	consensus, validators, chainValidators, err := a.Aggregator.GetData()
 	if err != nil {
-		a.Logger.Fatal().Err(err).Msg("Error getting consensus state")
+		a.Logger.Error().Err(err).Msg("Error getting data")
 		return
 	}
 
-	renderInfo := types.RenderIntoFromTendermintResponse(consensus, validators)
+	renderInfo := types.RenderIntoFromTendermintResponse(consensus, validators, chainValidators)
 	//fmt.Printf("parsed %+v\n", renderInfo)
 
 	a.DisplayWrapper.SetInfo(renderInfo)

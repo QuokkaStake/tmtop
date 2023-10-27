@@ -10,11 +10,12 @@ import (
 func RenderIntoFromTendermintResponse(
 	consensus *ConsensusStateResponse,
 	tendermintValidators []TendermintValidator,
+	chainValidators ChainValidators,
 ) RenderInfo {
 	hrsSplit := strings.Split(consensus.Result.RoundState.HeightRoundStep, "/")
 
 	return RenderInfo{
-		Validators: ValidatorsFromTendermintResponse(consensus, tendermintValidators),
+		Validators: ValidatorsFromTendermintResponse(consensus, tendermintValidators, chainValidators),
 		Height:     utils.MustParseInt64(hrsSplit[0]),
 		Round:      utils.MustParseInt64(hrsSplit[1]),
 		Step:       utils.MustParseInt64(hrsSplit[2]),
@@ -25,7 +26,10 @@ func RenderIntoFromTendermintResponse(
 func ValidatorsFromTendermintResponse(
 	consensus *ConsensusStateResponse,
 	tendermintValidators []TendermintValidator,
+	chainValidators ChainValidators,
 ) Validators {
+	chainValidatorsMap := chainValidators.ToMap()
+
 	validators := make(Validators, len(consensus.Result.RoundState.HeightVoteSet[0].Prevotes))
 
 	for index, prevote := range consensus.Result.RoundState.HeightVoteSet[0].Prevotes {
@@ -46,6 +50,10 @@ func ValidatorsFromTendermintResponse(
 			Prevote:     VoteFromString(prevote),
 			VotingPower: vp,
 			IsProposer:  validator.Address == consensus.Result.RoundState.Proposer.Address,
+		}
+
+		if chainValidator, ok := chainValidatorsMap[validator.Address]; ok {
+			validators[index].Moniker = chainValidator.Moniker
 		}
 	}
 

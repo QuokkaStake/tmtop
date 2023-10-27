@@ -6,7 +6,6 @@ import (
 	configPkg "main/pkg/config"
 	"net/http"
 	"strconv"
-	"sync"
 	"time"
 
 	"main/pkg/types"
@@ -24,44 +23,6 @@ func NewRPC(config configPkg.Config, logger zerolog.Logger) *RPC {
 		Config: config,
 		Logger: logger.With().Str("component", "rpc").Logger(),
 	}
-}
-
-func (rpc *RPC) GetConsensusStateAndValidators() (
-	*types.ConsensusStateResponse,
-	[]types.TendermintValidator,
-	error,
-) {
-	var wg sync.WaitGroup
-
-	var consensusError error
-	var validatorsError error
-
-	var validators []types.TendermintValidator
-	var consensus *types.ConsensusStateResponse
-
-	wg.Add(2)
-
-	go func() {
-		consensus, consensusError = rpc.GetConsensusState()
-		wg.Done()
-	}()
-
-	go func() {
-		validators, validatorsError = rpc.GetValidators()
-		wg.Done()
-	}()
-
-	wg.Wait()
-
-	if consensusError != nil {
-		return nil, nil, consensusError
-	}
-
-	if validatorsError != nil {
-		return nil, nil, validatorsError
-	}
-
-	return consensus, validators, nil
 }
 
 func (rpc *RPC) GetConsensusState() (*types.ConsensusStateResponse, error) {
