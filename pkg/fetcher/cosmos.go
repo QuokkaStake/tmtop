@@ -1,15 +1,16 @@
-package data_fetcher
+package fetcher
 
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/cosmos/cosmos-sdk/std"
-	"github.com/rs/zerolog"
 	configPkg "main/pkg/config"
 	"main/pkg/types"
 	"net/http"
 	"net/url"
 	"time"
+
+	"github.com/cosmos/cosmos-sdk/std"
+	"github.com/rs/zerolog"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	codecTypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -108,11 +109,11 @@ func (f *CosmosDataFetcher) GetValidators() (types.ChainValidators, error) {
 	return validators, nil
 }
 
-func (f *CosmosDataFetcher) Get(relativeUrl string, target interface{}) error {
+func (f *CosmosDataFetcher) Get(relativeURL string, target interface{}) error {
 	client := &http.Client{Timeout: 300 * time.Second}
 	start := time.Now()
 
-	url := fmt.Sprintf("%s%s", f.Config.RPCHost, relativeUrl)
+	url := fmt.Sprintf("%s%s", f.Config.RPCHost, relativeURL)
 
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {

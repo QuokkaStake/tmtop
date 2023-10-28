@@ -1,13 +1,14 @@
 package pkg
 
 import (
-	"github.com/rs/zerolog"
 	"main/pkg/aggregator"
 	configPkg "main/pkg/config"
+	"main/pkg/display"
 	loggerPkg "main/pkg/logger"
 	"main/pkg/types"
-	"main/pkg/view_wrapper"
 	"time"
+
+	"github.com/rs/zerolog"
 )
 
 type App struct {
@@ -15,7 +16,7 @@ type App struct {
 	Version        string
 	Config         configPkg.Config
 	Aggregator     *aggregator.Aggregator
-	DisplayWrapper *view_wrapper.Wrapper
+	DisplayWrapper *display.Wrapper
 }
 
 func NewApp(config configPkg.Config, version string) *App {
@@ -29,7 +30,7 @@ func NewApp(config configPkg.Config, version string) *App {
 		Version:        version,
 		Config:         config,
 		Aggregator:     aggregator.NewAggregator(config, logger),
-		DisplayWrapper: view_wrapper.NewWrapper(logger),
+		DisplayWrapper: display.NewWrapper(logger),
 	}
 }
 
@@ -62,8 +63,12 @@ func (a *App) RefreshConsensus() {
 		return
 	}
 
-	renderInfo := types.RenderIntoFromTendermintResponse(consensus, validators, chainValidators)
-	//fmt.Printf("parsed %+v\n", renderInfo)
+	state, err := types.StateFromTendermintResponse(consensus, validators, chainValidators)
+	if err != nil {
+		a.Logger.Error().Err(err).Msg("Error converting data")
+		return
+	}
+	// fmt.Printf("parsed %+v\n", state)
 
-	a.DisplayWrapper.SetInfo(renderInfo)
+	a.DisplayWrapper.SetState(state)
 }

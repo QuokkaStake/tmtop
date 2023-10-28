@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"main/pkg/utils"
 	"math/big"
+	"strconv"
 )
 
 type Validator struct {
 	Index              int
-	Moniker            string
 	Address            string
 	VotingPower        *big.Int
 	VotingPowerPercent *big.Float
@@ -18,36 +18,6 @@ type Validator struct {
 }
 
 type Validators []Validator
-
-func (v Validator) Serialize() string {
-	return fmt.Sprintf(
-		" %s %s %s %s%% %s ",
-		v.Prevote.Serialize(),
-		v.Precommit.Serialize(),
-		utils.RightPadAndTrim(fmt.Sprintf("%d", v.Index+1), 3),
-		utils.RightPadAndTrim(fmt.Sprintf("%.2f", v.VotingPowerPercent), 6),
-		utils.LeftPadAndTrim(v.Moniker, 25),
-	)
-
-	//return fmt.Sprintf(
-	//	" %s %s %s %s%% %s ",
-	//	v.Prevote.Serialize(),
-	//	v.Precommit.Serialize(),
-	//	utils.RightPadAndTrim(fmt.Sprintf("%d", v.Index+1), 4),
-	//	utils.RightPadAndTrim(fmt.Sprintf("%.2f", v.VotingPowerPercent), 5),
-	//	utils.LeftPadAndTrim(v.Moniker, 15),
-	//)
-}
-
-func (v Validators) Serialise() []string {
-	serialized := make([]string, len(v))
-
-	for index, validator := range v {
-		serialized[index] = validator.Serialize()
-	}
-
-	return serialized
-}
 
 func (v Validators) GetTotalVotingPower() *big.Int {
 	sum := big.NewInt(0)
@@ -93,4 +63,37 @@ func (v Validators) GetTotalVotingPowerPrecommittedPercent(countDisagreeing bool
 	votingPowerPercent = votingPowerPercent.Mul(votingPowerPercent, big.NewFloat(100))
 
 	return votingPowerPercent
+}
+
+type ValidatorWithInfo struct {
+	Validator      Validator
+	ChainValidator *ChainValidator
+}
+
+func (v ValidatorWithInfo) Serialize() string {
+	name := v.Validator.Address
+	if v.ChainValidator != nil {
+		name = v.ChainValidator.Moniker
+	}
+
+	return fmt.Sprintf(
+		" %s %s %s %s%% %s ",
+		v.Validator.Prevote.Serialize(),
+		v.Validator.Precommit.Serialize(),
+		utils.RightPadAndTrim(strconv.Itoa(v.Validator.Index+1), 3),
+		utils.RightPadAndTrim(fmt.Sprintf("%.2f", v.Validator.VotingPowerPercent), 6),
+		utils.LeftPadAndTrim(name, 25),
+	)
+}
+
+type ValidatorsWithInfo []ValidatorWithInfo
+
+func (v ValidatorsWithInfo) Serialise() []string {
+	serialized := make([]string, len(v))
+
+	for index, validator := range v {
+		serialized[index] = validator.Serialize()
+	}
+
+	return serialized
 }

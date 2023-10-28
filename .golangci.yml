@@ -41,3 +41,4 @@ linters:
     - gci
     - musttag
     - depguard
+    - ireturn

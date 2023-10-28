@@ -70,11 +70,11 @@ func (rpc *RPC) GetValidatorsAtPage(page int) (*types.ValidatorsResponse, error)
 	return &response, nil
 }
 
-func (rpc *RPC) Get(relativeUrl string, target interface{}) error {
+func (rpc *RPC) Get(relativeURL string, target interface{}) error {
 	client := &http.Client{Timeout: 300 * time.Second}
 	start := time.Now()
 
-	url := fmt.Sprintf("%s%s", rpc.Config.RPCHost, relativeUrl)
+	url := fmt.Sprintf("%s%s", rpc.Config.RPCHost, relativeURL)
 
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {

@@ -1,4 +1,4 @@
-package data_fetcher
+package fetcher
 
 import "main/pkg/types"
 

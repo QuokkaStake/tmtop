@@ -1,11 +1,12 @@
 package main
 
 import (
-	"github.com/spf13/cobra"
 	"main/pkg"
 	configPkg "main/pkg/config"
 	"main/pkg/logger"
 	"time"
+
+	"github.com/spf13/cobra"
 )
 
 var (
@@ -35,7 +36,7 @@ func main() {
 	rootCmd.PersistentFlags().BoolVar(&config.QueryValidators, "query-validators", false, "Whether to query validators from cosmos-sdk")
 
 	requiredFlags := []string{
-		//"rpc-host",
+		// "rpc-host",
 	}
 
 	for _, requiredFlag := range requiredFlags {

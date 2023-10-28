@@ -1,11 +1,12 @@
-package view_wrapper
+package display
 
 import (
 	"fmt"
+	"main/pkg/types"
+
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/rs/zerolog"
-	"main/pkg/types"
 )
 
 const ColumnsAmount = 3
@@ -27,7 +28,7 @@ func NewWrapper(logger zerolog.Logger) *Wrapper {
 	table := tview.NewTable().
 		SetBorders(false).
 		SetSelectable(false, false).
-		//SetSeparator(tview.Borders.Vertical).
+		// SetSeparator(tview.Borders.Vertical).
 		SetContent(tableData)
 
 	infoTextView := tview.NewTextView().
@@ -68,8 +69,8 @@ func (w *Wrapper) Start() {
 	w.Table.SetBackgroundColor(tcell.ColorDefault)
 	w.Grid.AddItem(w.Table, 2, 0, 8, 6, 0, 0, false)
 
-	fmt.Fprintf(w.InfoTextView, "%s", "testtesttest")
-	fmt.Fprintf(w.ProgressTextView, "%s", "testtesttest")
+	fmt.Fprint(w.InfoTextView, "testtesttest")
+	fmt.Fprint(w.ProgressTextView, "testtesttest")
 
 	w.App.SetBeforeDrawFunc(func(screen tcell.Screen) bool {
 		screen.Clear()
@@ -81,10 +82,10 @@ func (w *Wrapper) Start() {
 	}
 }
 
-func (w *Wrapper) SetInfo(info types.RenderInfo) {
-	w.TableData.SetValidators(info.Validators)
+func (w *Wrapper) SetState(state types.State) {
+	w.TableData.SetValidators(state.GetValidatorsWithInfo())
 
 	w.InfoTextView.Clear()
-	fmt.Fprintf(w.InfoTextView, info.SerializeInfo())
+	fmt.Fprint(w.InfoTextView, state.SerializeInfo())
 	w.App.Draw()
 }

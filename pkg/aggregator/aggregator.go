@@ -1,12 +1,13 @@
 package aggregator
 
 import (
-	"github.com/rs/zerolog"
 	configPkg "main/pkg/config"
-	"main/pkg/data_fetcher"
+	dataFetcher "main/pkg/fetcher"
 	"main/pkg/tendermint"
 	"main/pkg/types"
 	"sync"
+
+	"github.com/rs/zerolog"
 )
 
 type Aggregator struct {
@@ -14,7 +15,7 @@ type Aggregator struct {
 	Logger zerolog.Logger
 
 	TendermintClient *tendermint.RPC
-	DataFetcher      data_fetcher.DataFetcher
+	DataFetcher      dataFetcher.DataFetcher
 }
 
 func NewAggregator(config configPkg.Config, logger zerolog.Logger) *Aggregator {
@@ -22,7 +23,7 @@ func NewAggregator(config configPkg.Config, logger zerolog.Logger) *Aggregator {
 		Config:           config,
 		Logger:           logger.With().Str("component", "aggregator").Logger(),
 		TendermintClient: tendermint.NewRPC(config, logger),
-		DataFetcher:      data_fetcher.GetDataFetcher(config, logger),
+		DataFetcher:      dataFetcher.GetDataFetcher(config, logger),
 	}
 }
 
