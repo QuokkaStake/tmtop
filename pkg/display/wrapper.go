@@ -44,7 +44,7 @@ func NewWrapper(logger zerolog.Logger) *Wrapper {
 		SetColumns(0, 0, 0, 0, 0, 0).
 		SetBorders(true)
 
-	app := tview.NewApplication().SetRoot(grid, true).SetFocus(grid)
+	app := tview.NewApplication().SetRoot(grid, true).SetFocus(table)
 
 	return &Wrapper{
 		InfoTextView:     infoTextView,
