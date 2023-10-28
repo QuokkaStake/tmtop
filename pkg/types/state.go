@@ -11,12 +11,51 @@ type State struct {
 	Height          int64
 	Round           int64
 	Step            int64
-	Validators      Validators
-	ChainValidators ChainValidators
+	Validators      *Validators
+	ChainValidators *ChainValidators
 	StartTime       time.Time
 }
 
-func (s State) SerializeInfo() string {
+func NewState() *State {
+	return &State{
+		Height:          0,
+		Round:           0,
+		Step:            0,
+		Validators:      nil,
+		ChainValidators: nil,
+		StartTime:       time.Now(),
+	}
+}
+
+func (s *State) SetTendermintResponse(
+	consensus *ConsensusStateResponse,
+	tendermintValidators []TendermintValidator,
+) error {
+	validators, err := ValidatorsFromTendermintResponse(consensus, tendermintValidators)
+	if err != nil {
+		return err
+	}
+
+	hrsSplit := strings.Split(consensus.Result.RoundState.HeightRoundStep, "/")
+
+	s.Validators = &validators
+	s.Height = utils.MustParseInt64(hrsSplit[0])
+	s.Round = utils.MustParseInt64(hrsSplit[1])
+	s.Step = utils.MustParseInt64(hrsSplit[2])
+	s.StartTime = consensus.Result.RoundState.StartTime
+
+	return nil
+}
+
+func (s *State) SetChainValidators(validators *ChainValidators) {
+	s.ChainValidators = validators
+}
+
+func (s *State) SerializeInfo() string {
+	if s.Validators == nil {
+		return ""
+	}
+
 	var sb strings.Builder
 
 	sb.WriteString(fmt.Sprintf(" height=%d round=%d step=%d\n", s.Height, s.Round, s.Step))
@@ -35,15 +74,25 @@ func (s State) SerializeInfo() string {
 	return sb.String()
 }
 
-func (s State) GetValidatorsWithInfo() ValidatorsWithInfo {
-	validators := make(ValidatorsWithInfo, len(s.Validators))
-	chainValidatorsMap := s.ChainValidators.ToMap()
+func (s *State) GetValidatorsWithInfo() ValidatorsWithInfo {
+	if s.Validators == nil {
+		return ValidatorsWithInfo{}
+	}
 
-	for index, validator := range s.Validators {
+	validators := make(ValidatorsWithInfo, len(*s.Validators))
+
+	for index, validator := range *s.Validators {
 		validators[index] = ValidatorWithInfo{
 			Validator: validator,
 		}
+	}
 
+	if s.ChainValidators == nil {
+		return validators
+	}
+
+	chainValidatorsMap := s.ChainValidators.ToMap()
+	for index, validator := range *s.Validators {
 		if chainValidator, ok := chainValidatorsMap[validator.Address]; ok {
 			validators[index].ChainValidator = &chainValidator
 		}

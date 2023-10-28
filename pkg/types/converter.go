@@ -2,32 +2,9 @@ package types
 
 import (
 	"fmt"
-	"main/pkg/utils"
 	"math/big"
 	"strings"
 )
-
-func StateFromTendermintResponse(
-	consensus *ConsensusStateResponse,
-	tendermintValidators []TendermintValidator,
-	chainValidators ChainValidators,
-) (State, error) {
-	validators, err := ValidatorsFromTendermintResponse(consensus, tendermintValidators)
-	if err != nil {
-		return State{}, err
-	}
-
-	hrsSplit := strings.Split(consensus.Result.RoundState.HeightRoundStep, "/")
-
-	return State{
-		Validators:      validators,
-		ChainValidators: chainValidators,
-		Height:          utils.MustParseInt64(hrsSplit[0]),
-		Round:           utils.MustParseInt64(hrsSplit[1]),
-		Step:            utils.MustParseInt64(hrsSplit[2]),
-		StartTime:       consensus.Result.RoundState.StartTime,
-	}, nil
-}
 
 func ValidatorsFromTendermintResponse(
 	consensus *ConsensusStateResponse,

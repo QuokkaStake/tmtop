@@ -8,7 +8,7 @@ import (
 )
 
 type DataFetcher interface {
-	GetValidators() (types.ChainValidators, error)
+	GetValidators() (*types.ChainValidators, error)
 }
 
 func GetDataFetcher(config configPkg.Config, logger zerolog.Logger) DataFetcher {

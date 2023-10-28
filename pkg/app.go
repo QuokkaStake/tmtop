@@ -17,6 +17,7 @@ type App struct {
 	Config         configPkg.Config
 	Aggregator     *aggregator.Aggregator
 	DisplayWrapper *display.Wrapper
+	State          *types.State
 }
 
 func NewApp(config configPkg.Config, version string) *App {
@@ -31,11 +32,13 @@ func NewApp(config configPkg.Config, version string) *App {
 		Config:         config,
 		Aggregator:     aggregator.NewAggregator(config, logger),
 		DisplayWrapper: display.NewWrapper(logger),
+		State:          types.NewState(),
 	}
 }
 
 func (a *App) Start() {
 	go a.GoRefreshConsensus()
+	go a.GoRefreshValidators()
 
 	a.DisplayWrapper.Start()
 }
@@ -57,18 +60,43 @@ func (a *App) GoRefreshConsensus() {
 }
 
 func (a *App) RefreshConsensus() {
-	consensus, validators, chainValidators, err := a.Aggregator.GetData()
+	consensus, validators, err := a.Aggregator.GetData()
 	if err != nil {
-		a.Logger.Error().Err(err).Msg("Error getting data")
+		a.Logger.Error().Err(err).Msg("Error getting consensus data")
 		return
 	}
 
-	state, err := types.StateFromTendermintResponse(consensus, validators, chainValidators)
+	err = a.State.SetTendermintResponse(consensus, validators)
 	if err != nil {
 		a.Logger.Error().Err(err).Msg("Error converting data")
 		return
 	}
-	// fmt.Printf("parsed %+v\n", state)
+	a.DisplayWrapper.SetState(a.State)
+}
 
-	a.DisplayWrapper.SetState(state)
+func (a *App) GoRefreshValidators() {
+	a.RefreshValidators()
+
+	ticker := time.NewTicker(a.Config.ValidatorsRefreshRate)
+	done := make(chan bool)
+
+	for {
+		select {
+		case <-done:
+			return
+		case <-ticker.C:
+			a.RefreshValidators()
+		}
+	}
+}
+
+func (a *App) RefreshValidators() {
+	chainValidators, err := a.Aggregator.GetChainValidators()
+	if err != nil {
+		a.Logger.Error().Err(err).Msg("Error getting chain validators")
+		return
+	}
+
+	a.State.SetChainValidators(chainValidators)
+	a.DisplayWrapper.SetState(a.State)
 }

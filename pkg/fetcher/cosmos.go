@@ -72,7 +72,7 @@ func (f *CosmosDataFetcher) AbciQuery(
 	return output.Unmarshal(response.Result.Response.Value)
 }
 
-func (f *CosmosDataFetcher) GetValidators() (types.ChainValidators, error) {
+func (f *CosmosDataFetcher) GetValidators() (*types.ChainValidators, error) {
 	query := stakingTypes.QueryValidatorsRequest{
 		Pagination: &queryTypes.PageRequest{
 			Limit: 1000,
@@ -106,7 +106,7 @@ func (f *CosmosDataFetcher) GetValidators() (types.ChainValidators, error) {
 		}
 	}
 
-	return validators, nil
+	return &validators, nil
 }
 
 func (f *CosmosDataFetcher) Get(relativeURL string, target interface{}) error {

@@ -34,6 +34,7 @@ func main() {
 	rootCmd.PersistentFlags().StringVar(&config.LogLevel, "log-level", "info", "Log level")
 	rootCmd.PersistentFlags().DurationVar(&config.RefreshRate, "refresh-rate", time.Second, "Refresh rate")
 	rootCmd.PersistentFlags().BoolVar(&config.QueryValidators, "query-validators", false, "Whether to query validators from cosmos-sdk")
+	rootCmd.PersistentFlags().DurationVar(&config.ValidatorsRefreshRate, "validators-refresh-rate", time.Minute, "Validators refresh rate")
 
 	requiredFlags := []string{
 		// "rpc-host",

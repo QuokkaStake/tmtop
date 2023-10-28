@@ -82,7 +82,7 @@ func (w *Wrapper) Start() {
 	}
 }
 
-func (w *Wrapper) SetState(state types.State) {
+func (w *Wrapper) SetState(state *types.State) {
 	w.TableData.SetValidators(state.GetValidatorsWithInfo())
 
 	w.InfoTextView.Clear()

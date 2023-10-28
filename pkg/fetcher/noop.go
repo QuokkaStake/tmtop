@@ -9,6 +9,6 @@ func NewNoopDataFetcher() *NoopDataFetcher {
 	return &NoopDataFetcher{}
 }
 
-func (f *NoopDataFetcher) GetValidators() (types.ChainValidators, error) {
-	return types.ChainValidators{}, nil
+func (f *NoopDataFetcher) GetValidators() (*types.ChainValidators, error) {
+	return &types.ChainValidators{}, nil
 }
