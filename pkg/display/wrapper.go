@@ -9,15 +9,23 @@ import (
 	"github.com/rs/zerolog"
 )
 
-const ColumnsAmount = 3
+const (
+	ColumnsAmount    = 3
+	RowsAmount       = 10
+	DebugBlockHeight = 2
+)
 
 type Wrapper struct {
 	InfoTextView     *tview.TextView
 	ProgressTextView *tview.TextView
+	DebugTextView    *tview.TextView
 	Table            *tview.Table
 	TableData        *TableData
 	Grid             *tview.Grid
 	App              *tview.Application
+	InfoBlockWidth   int
+
+	DebugEnabled bool
 
 	Logger zerolog.Logger
 }
@@ -39,6 +47,10 @@ func NewWrapper(logger zerolog.Logger) *Wrapper {
 		SetDynamicColors(true).
 		SetRegions(true)
 
+	debugTextView := tview.NewTextView().
+		SetDynamicColors(true).
+		SetRegions(true)
+
 	grid := tview.NewGrid().
 		SetRows(0, 0, 0, 0, 0, 0, 0, 0, 0, 0).
 		SetColumns(0, 0, 0, 0, 0, 0).
@@ -49,28 +61,45 @@ func NewWrapper(logger zerolog.Logger) *Wrapper {
 	return &Wrapper{
 		InfoTextView:     infoTextView,
 		ProgressTextView: progressTextView,
+		DebugTextView:    debugTextView,
 		Table:            table,
 		TableData:        tableData,
 		Grid:             grid,
 		App:              app,
 		Logger:           logger.With().Str("component", "display_wrapper").Logger(),
+		DebugEnabled:     false,
+		InfoBlockWidth:   2,
 	}
 }
 
 func (w *Wrapper) Start() {
+	w.App.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Rune() == 'q' {
+			w.App.Stop()
+		}
+
+		if event.Rune() == 'd' {
+			w.ToggleDebug()
+		}
+
+		return event
+	})
+
 	w.Grid.SetBackgroundColor(tcell.ColorDefault)
 
 	w.InfoTextView.SetBackgroundColor(tcell.ColorDefault)
 	w.ProgressTextView.SetBackgroundColor(tcell.ColorDefault)
+	w.DebugTextView.SetBackgroundColor(tcell.ColorDefault)
 
-	w.Grid.AddItem(w.InfoTextView, 0, 0, 2, 3, 1, 1, false)
-	w.Grid.AddItem(w.ProgressTextView, 0, 3, 2, 3, 1, 1, false)
+	w.Grid.AddItem(w.InfoTextView, 0, 0, w.InfoBlockWidth, 3, 1, 1, false)
+	w.Grid.AddItem(w.ProgressTextView, 0, 3, w.InfoBlockWidth, 3, 1, 1, false)
 
 	w.Table.SetBackgroundColor(tcell.ColorDefault)
-	w.Grid.AddItem(w.Table, 2, 0, 8, 6, 0, 0, false)
+	w.Grid.AddItem(w.Table, w.InfoBlockWidth, 0, RowsAmount-w.InfoBlockWidth, 6, 0, 0, false)
 
 	fmt.Fprint(w.InfoTextView, "testtesttest")
 	fmt.Fprint(w.ProgressTextView, "testtesttest")
+	fmt.Fprint(w.DebugTextView, "testtesttest")
 
 	w.App.SetBeforeDrawFunc(func(screen tcell.Screen) bool {
 		screen.Clear()
@@ -82,10 +111,59 @@ func (w *Wrapper) Start() {
 	}
 }
 
+func (w *Wrapper) ToggleDebug() {
+	w.DebugEnabled = !w.DebugEnabled
+
+	if w.DebugEnabled {
+		w.Grid.RemoveItem(w.Table)
+		w.Grid.AddItem(
+			w.Table,
+			w.InfoBlockWidth,
+			0,
+			RowsAmount-w.InfoBlockWidth-DebugBlockHeight,
+			6,
+			0,
+			0,
+			false,
+		)
+		w.Grid.AddItem(
+			w.DebugTextView,
+			RowsAmount-DebugBlockHeight,
+			0,
+			DebugBlockHeight,
+			6,
+			0,
+			0,
+			false,
+		)
+	} else {
+		w.Grid.RemoveItem(w.Table)
+		w.Grid.RemoveItem(w.DebugTextView)
+		w.Grid.AddItem(
+			w.Table,
+			w.InfoBlockWidth,
+			0,
+			RowsAmount-w.InfoBlockWidth,
+			6,
+			0,
+			0,
+			false,
+		)
+	}
+}
+
 func (w *Wrapper) SetState(state *types.State) {
 	w.TableData.SetValidators(state.GetValidatorsWithInfo())
 
 	w.InfoTextView.Clear()
 	fmt.Fprint(w.InfoTextView, state.SerializeInfo())
 	w.App.Draw()
+}
+
+func (w *Wrapper) DebugText(text string) {
+	fmt.Fprint(w.DebugTextView, text+"\n")
+}
+
+func (w *Wrapper) ChangeInfoBlockHeight(increase bool) {
+
 }
