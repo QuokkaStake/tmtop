@@ -2,11 +2,10 @@ package display
 
 import (
 	"fmt"
-	"main/pkg/types"
-
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/rs/zerolog"
+	"main/pkg/types"
 )
 
 const (
@@ -82,20 +81,24 @@ func (w *Wrapper) Start() {
 			w.ToggleDebug()
 		}
 
+		if event.Rune() == 'b' {
+			w.ChangeInfoBlockHeight(true)
+		}
+
+		if event.Rune() == 's' {
+			w.ChangeInfoBlockHeight(false)
+		}
+
 		return event
 	})
 
 	w.Grid.SetBackgroundColor(tcell.ColorDefault)
-
+	w.Table.SetBackgroundColor(tcell.ColorDefault)
 	w.InfoTextView.SetBackgroundColor(tcell.ColorDefault)
 	w.ProgressTextView.SetBackgroundColor(tcell.ColorDefault)
 	w.DebugTextView.SetBackgroundColor(tcell.ColorDefault)
 
-	w.Grid.AddItem(w.InfoTextView, 0, 0, w.InfoBlockWidth, 3, 1, 1, false)
-	w.Grid.AddItem(w.ProgressTextView, 0, 3, w.InfoBlockWidth, 3, 1, 1, false)
-
-	w.Table.SetBackgroundColor(tcell.ColorDefault)
-	w.Grid.AddItem(w.Table, w.InfoBlockWidth, 0, RowsAmount-w.InfoBlockWidth, 6, 0, 0, false)
+	w.Redraw()
 
 	fmt.Fprint(w.InfoTextView, "testtesttest")
 	fmt.Fprint(w.ProgressTextView, "testtesttest")
@@ -114,8 +117,43 @@ func (w *Wrapper) Start() {
 func (w *Wrapper) ToggleDebug() {
 	w.DebugEnabled = !w.DebugEnabled
 
+	w.Redraw()
+}
+
+func (w *Wrapper) SetState(state *types.State) {
+	w.TableData.SetValidators(state.GetValidatorsWithInfo())
+
+	w.InfoTextView.Clear()
+	fmt.Fprint(w.InfoTextView, state.SerializeInfo())
+	w.App.Draw()
+}
+
+func (w *Wrapper) DebugText(text string) {
+	fmt.Fprint(w.DebugTextView, text+"\n")
+}
+
+func (w *Wrapper) ChangeInfoBlockHeight(increase bool) {
+	//w.InfoBlockWidth++
+
+	if increase && w.InfoBlockWidth+1 <= RowsAmount-DebugBlockHeight-1 {
+		w.InfoBlockWidth++
+	} else if !increase && w.InfoBlockWidth-1 >= 1 {
+		w.InfoBlockWidth--
+	}
+
+	w.Redraw()
+}
+
+func (w *Wrapper) Redraw() {
+	w.Grid.RemoveItem(w.InfoTextView)
+	w.Grid.RemoveItem(w.ProgressTextView)
+	w.Grid.RemoveItem(w.Table)
+	w.Grid.RemoveItem(w.DebugTextView)
+
+	w.Grid.AddItem(w.InfoTextView, 0, 0, w.InfoBlockWidth, 3, 1, 1, false)
+	w.Grid.AddItem(w.ProgressTextView, 0, 3, w.InfoBlockWidth, 3, 1, 1, false)
+
 	if w.DebugEnabled {
-		w.Grid.RemoveItem(w.Table)
 		w.Grid.AddItem(
 			w.Table,
 			w.InfoBlockWidth,
@@ -137,8 +175,6 @@ func (w *Wrapper) ToggleDebug() {
 			false,
 		)
 	} else {
-		w.Grid.RemoveItem(w.Table)
-		w.Grid.RemoveItem(w.DebugTextView)
 		w.Grid.AddItem(
 			w.Table,
 			w.InfoBlockWidth,
@@ -150,20 +186,4 @@ func (w *Wrapper) ToggleDebug() {
 			false,
 		)
 	}
-}
-
-func (w *Wrapper) SetState(state *types.State) {
-	w.TableData.SetValidators(state.GetValidatorsWithInfo())
-
-	w.InfoTextView.Clear()
-	fmt.Fprint(w.InfoTextView, state.SerializeInfo())
-	w.App.Draw()
-}
-
-func (w *Wrapper) DebugText(text string) {
-	fmt.Fprint(w.DebugTextView, text+"\n")
-}
-
-func (w *Wrapper) ChangeInfoBlockHeight(increase bool) {
-
 }
