@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"io"
 	"os"
 
 	"github.com/rs/zerolog"
@@ -11,13 +12,20 @@ func GetDefaultLogger() *zerolog.Logger {
 	return &log
 }
 
-func GetLogger(logLevelRaw string) *zerolog.Logger {
-	log := zerolog.New(zerolog.ConsoleWriter{Out: os.Stdout}).With().Timestamp().Logger()
-	logLevel, err := zerolog.ParseLevel(logLevelRaw)
-	if err != nil {
-		log.Fatal().Err(err).Msg("Could not parse log level")
-	}
+type Writer struct {
+	io.Writer
+	LogChannel chan string
+}
 
-	zerolog.SetGlobalLevel(logLevel)
+func (w Writer) Write(msg []byte) (int, error) {
+	w.LogChannel <- string(msg)
+	return len(msg), nil
+}
+
+func GetLogger(logChannel chan string) *zerolog.Logger {
+	writer := zerolog.ConsoleWriter{Out: Writer{LogChannel: logChannel}, NoColor: true}
+	log := zerolog.New(writer).With().Timestamp().Logger()
+	zerolog.SetGlobalLevel(zerolog.TraceLevel)
+
 	return &log
 }

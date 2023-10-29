@@ -14,8 +14,9 @@ import (
 )
 
 type RPC struct {
-	Config configPkg.Config
-	Logger zerolog.Logger
+	Config     configPkg.Config
+	Logger     zerolog.Logger
+	LogChannel chan string
 }
 
 func NewRPC(config configPkg.Config, logger zerolog.Logger) *RPC {

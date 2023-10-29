@@ -18,10 +18,13 @@ type App struct {
 	Aggregator     *aggregator.Aggregator
 	DisplayWrapper *display.Wrapper
 	State          *types.State
+	LogChannel     chan string
 }
 
 func NewApp(config configPkg.Config, version string) *App {
-	logger := loggerPkg.GetLogger(config.LogLevel).
+	logChannel := make(chan string)
+
+	logger := loggerPkg.GetLogger(logChannel).
 		With().
 		Str("component", "app_manager").
 		Logger()
@@ -33,12 +36,14 @@ func NewApp(config configPkg.Config, version string) *App {
 		Aggregator:     aggregator.NewAggregator(config, logger),
 		DisplayWrapper: display.NewWrapper(logger),
 		State:          types.NewState(),
+		LogChannel:     logChannel,
 	}
 }
 
 func (a *App) Start() {
 	go a.GoRefreshConsensus()
 	go a.GoRefreshValidators()
+	go a.DisplayLogs()
 
 	a.DisplayWrapper.Start()
 }
@@ -99,4 +104,11 @@ func (a *App) RefreshValidators() {
 
 	a.State.SetChainValidators(chainValidators)
 	a.DisplayWrapper.SetState(a.State)
+}
+
+func (a *App) DisplayLogs() {
+	for {
+		logString := <-a.LogChannel
+		a.DisplayWrapper.DebugText(logString)
+	}
 }

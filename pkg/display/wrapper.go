@@ -2,10 +2,11 @@ package display
 
 import (
 	"fmt"
+	"main/pkg/types"
+
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/rs/zerolog"
-	"main/pkg/types"
 )
 
 const (
@@ -102,7 +103,6 @@ func (w *Wrapper) Start() {
 
 	fmt.Fprint(w.InfoTextView, "testtesttest")
 	fmt.Fprint(w.ProgressTextView, "testtesttest")
-	fmt.Fprint(w.DebugTextView, "testtesttest")
 
 	w.App.SetBeforeDrawFunc(func(screen tcell.Screen) bool {
 		screen.Clear()
@@ -129,12 +129,11 @@ func (w *Wrapper) SetState(state *types.State) {
 }
 
 func (w *Wrapper) DebugText(text string) {
-	fmt.Fprint(w.DebugTextView, text+"\n")
+	fmt.Fprint(w.DebugTextView, text)
+	w.DebugTextView.ScrollToEnd()
 }
 
 func (w *Wrapper) ChangeInfoBlockHeight(increase bool) {
-	//w.InfoBlockWidth++
-
 	if increase && w.InfoBlockWidth+1 <= RowsAmount-DebugBlockHeight-1 {
 		w.InfoBlockWidth++
 	} else if !increase && w.InfoBlockWidth-1 >= 1 {
