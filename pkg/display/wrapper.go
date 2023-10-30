@@ -24,7 +24,8 @@ type Wrapper struct {
 	TableData             *TableData
 	Grid                  *tview.Grid
 	App                   *tview.Application
-	InfoBlockWidth        int
+
+	InfoBlockWidth int
 
 	DebugEnabled bool
 
@@ -143,8 +144,14 @@ func (w *Wrapper) SetState(state *types.State) {
 
 	w.ConsensusInfoTextView.Clear()
 	w.ChainInfoTextView.Clear()
+	w.ProgressTextView.Clear()
 	fmt.Fprint(w.ConsensusInfoTextView, state.SerializeConsensus())
 	fmt.Fprint(w.ChainInfoTextView, state.SerializeChainInfo())
+
+	_, _, width, _ := w.ConsensusInfoTextView.GetInnerRect()
+	progressBar := state.SerializeConsensusProgressbar(width)
+	fmt.Fprint(w.ProgressTextView, progressBar)
+
 	w.App.Draw()
 }
 

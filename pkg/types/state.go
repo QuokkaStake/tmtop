@@ -123,6 +123,24 @@ func (s *State) SerializeChainInfo() string {
 	return sb.String()
 }
 
+func (s *State) SerializeConsensusProgressbar(width int) string {
+	if s.Validators == nil {
+		return ""
+	}
+
+	prevotePercent := s.Validators.GetTotalVotingPowerPrevotedPercent(true)
+	prevotePercentFloat, _ := prevotePercent.Float64()
+	prevotePercentInt := int(prevotePercentFloat)
+
+	progressBar := ProgressBar{
+		Width:    width,
+		Height:   2,
+		Progress: prevotePercentInt,
+	}
+
+	return progressBar.Serialize()
+}
+
 func (s *State) GetValidatorsWithInfo() ValidatorsWithInfo {
 	if s.Validators == nil {
 		return ValidatorsWithInfo{}
