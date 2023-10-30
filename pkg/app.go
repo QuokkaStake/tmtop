@@ -43,6 +43,7 @@ func NewApp(config configPkg.Config, version string) *App {
 func (a *App) Start() {
 	go a.GoRefreshConsensus()
 	go a.GoRefreshValidators()
+	go a.GoRefreshChainInfo()
 	go a.DisplayLogs()
 
 	a.DisplayWrapper.Start()
@@ -103,6 +104,33 @@ func (a *App) RefreshValidators() {
 	}
 
 	a.State.SetChainValidators(chainValidators)
+	a.DisplayWrapper.SetState(a.State)
+}
+
+func (a *App) GoRefreshChainInfo() {
+	a.RefreshChainInfo()
+
+	ticker := time.NewTicker(a.Config.ChainInfoRefreshRate)
+	done := make(chan bool)
+
+	for {
+		select {
+		case <-done:
+			return
+		case <-ticker.C:
+			a.RefreshChainInfo()
+		}
+	}
+}
+
+func (a *App) RefreshChainInfo() {
+	chainInfo, err := a.Aggregator.GetChainInfo()
+	if err != nil {
+		a.Logger.Error().Err(err).Msg("Error getting chain validators")
+		return
+	}
+
+	a.State.SetChainInfo(&chainInfo.Result)
 	a.DisplayWrapper.SetState(a.State)
 }
 

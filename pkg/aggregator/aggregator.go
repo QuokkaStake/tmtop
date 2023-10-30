@@ -68,3 +68,7 @@ func (a *Aggregator) GetData() (
 func (a *Aggregator) GetChainValidators() (*types.ChainValidators, error) {
 	return a.DataFetcher.GetValidators()
 }
+
+func (a *Aggregator) GetChainInfo() (*types.TendermintStatusResponse, error) {
+	return a.TendermintClient.GetStatus()
+}

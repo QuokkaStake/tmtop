@@ -13,6 +13,7 @@ type State struct {
 	Step            int64
 	Validators      *Validators
 	ChainValidators *ChainValidators
+	ChainInfo       *TendermintStatusResult
 	StartTime       time.Time
 }
 
@@ -51,12 +52,21 @@ func (s *State) SetChainValidators(validators *ChainValidators) {
 	s.ChainValidators = validators
 }
 
+func (s *State) SetChainInfo(info *TendermintStatusResult) {
+	s.ChainInfo = info
+}
+
 func (s *State) SerializeInfo() string {
 	if s.Validators == nil {
 		return ""
 	}
 
 	var sb strings.Builder
+
+	if s.ChainInfo != nil {
+		sb.WriteString(fmt.Sprintf(" chain name: %s\n", s.ChainInfo.NodeInfo.Network))
+		sb.WriteString(fmt.Sprintf(" tendermint version: v%s\n", s.ChainInfo.NodeInfo.Version))
+	}
 
 	sb.WriteString(fmt.Sprintf(" height=%d round=%d step=%d\n", s.Height, s.Round, s.Step))
 	sb.WriteString(fmt.Sprintf(" block time: %s\n", utils.ZeroOrPositiveDuration(time.Since(s.StartTime))))

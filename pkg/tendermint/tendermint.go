@@ -62,6 +62,15 @@ func (rpc *RPC) GetValidators() ([]types.TendermintValidator, error) {
 	return validators, nil
 }
 
+func (rpc *RPC) GetStatus() (*types.TendermintStatusResponse, error) {
+	var response types.TendermintStatusResponse
+	if err := rpc.Get("/status", &response); err != nil {
+		return nil, err
+	}
+
+	return &response, nil
+}
+
 func (rpc *RPC) GetValidatorsAtPage(page int) (*types.ValidatorsResponse, error) {
 	var response types.ValidatorsResponse
 	if err := rpc.Get(fmt.Sprintf("/validators?page=%d&per_page=100", page), &response); err != nil {
