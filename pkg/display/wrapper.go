@@ -148,9 +148,11 @@ func (w *Wrapper) SetState(state *types.State) {
 	fmt.Fprint(w.ConsensusInfoTextView, state.SerializeConsensus())
 	fmt.Fprint(w.ChainInfoTextView, state.SerializeChainInfo())
 
-	_, _, width, _ := w.ConsensusInfoTextView.GetInnerRect()
-	progressBar := state.SerializeConsensusProgressbar(width)
-	fmt.Fprint(w.ProgressTextView, progressBar)
+	_, _, width, height := w.ConsensusInfoTextView.GetInnerRect()
+	fmt.Fprint(w.ProgressTextView, state.SerializePrevotesProgressbar(width, height/2))
+	fmt.Fprint(w.ProgressTextView, "\n")
+	fmt.Fprint(w.ProgressTextView, state.SerializePrecommitsProgressbar(width, height/2))
+	w.ProgressTextView.Highlight("progress")
 
 	w.App.Draw()
 }

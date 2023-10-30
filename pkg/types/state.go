@@ -123,22 +123,39 @@ func (s *State) SerializeChainInfo() string {
 	return sb.String()
 }
 
-func (s *State) SerializeConsensusProgressbar(width int) string {
+func (s *State) SerializeProgressbar(width int, height int, prefix string, progress int) string {
+	progressBar := ProgressBar{
+		Width:    width,
+		Height:   height,
+		Progress: progress,
+		Prefix:   prefix,
+	}
+
+	return progressBar.Serialize()
+}
+
+func (s *State) SerializePrevotesProgressbar(width int, height int) string {
 	if s.Validators == nil {
 		return ""
 	}
 
-	prevotePercent := s.Validators.GetTotalVotingPowerPrevotedPercent(true)
+	prevotePercent := s.Validators.GetTotalVotingPowerPrevotedPercent(false)
 	prevotePercentFloat, _ := prevotePercent.Float64()
 	prevotePercentInt := int(prevotePercentFloat)
 
-	progressBar := ProgressBar{
-		Width:    width,
-		Height:   3,
-		Progress: prevotePercentInt,
+	return s.SerializeProgressbar(width, height, "Prevotes: ", prevotePercentInt)
+}
+
+func (s *State) SerializePrecommitsProgressbar(width int, height int) string {
+	if s.Validators == nil {
+		return ""
 	}
 
-	return progressBar.Serialize()
+	precommitPercent := s.Validators.GetTotalVotingPowerPrecommittedPercent(false)
+	precommitPercentFloat, _ := precommitPercent.Float64()
+	precommitPercentInt := int(precommitPercentFloat)
+
+	return s.SerializeProgressbar(width, height, "Precommits: ", precommitPercentInt)
 }
 
 func (s *State) GetValidatorsWithInfo() ValidatorsWithInfo {
