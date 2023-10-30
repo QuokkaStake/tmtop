@@ -6,6 +6,7 @@ import (
 	"main/pkg/tendermint"
 	"main/pkg/types"
 	"sync"
+	"time"
 
 	"github.com/rs/zerolog"
 )
@@ -75,4 +76,8 @@ func (a *Aggregator) GetChainInfo() (*types.TendermintStatusResponse, error) {
 
 func (a *Aggregator) GetUpgrade() (*types.Upgrade, error) {
 	return a.DataFetcher.GetUpgradePlan()
+}
+
+func (a *Aggregator) GetBlockTime() (time.Duration, error) {
+	return a.TendermintClient.GetBlockTime()
 }

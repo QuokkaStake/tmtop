@@ -16,6 +16,7 @@ type State struct {
 	ChainInfo       *TendermintStatusResult
 	StartTime       time.Time
 	Upgrade         *Upgrade
+	BlockTime       time.Duration
 }
 
 func NewState() *State {
@@ -26,6 +27,7 @@ func NewState() *State {
 		Validators:      nil,
 		ChainValidators: nil,
 		StartTime:       time.Now(),
+		BlockTime:       0,
 	}
 }
 
@@ -61,6 +63,10 @@ func (s *State) SetUpgrade(upgrade *Upgrade) {
 	s.Upgrade = upgrade
 }
 
+func (s *State) SetBlockTime(blockTime time.Duration) {
+	s.BlockTime = blockTime
+}
+
 func (s *State) SerializeConsensus() string {
 	if s.Validators == nil {
 		return ""
@@ -80,7 +86,7 @@ func (s *State) SerializeConsensus() string {
 		s.Validators.GetTotalVotingPowerPrecommittedPercent(true),
 		s.Validators.GetTotalVotingPowerPrecommittedPercent(false),
 	))
-	sb.WriteString(fmt.Sprintf(" last updated at: %s\n", time.Now()))
+	sb.WriteString(fmt.Sprintf(" last updated at: %s\n", utils.SerializeTime(time.Now())))
 
 	return sb.String()
 }
@@ -95,6 +101,10 @@ func (s *State) SerializeChainInfo() string {
 	sb.WriteString(fmt.Sprintf(" chain name: %s\n", s.ChainInfo.NodeInfo.Network))
 	sb.WriteString(fmt.Sprintf(" tendermint version: v%s\n", s.ChainInfo.NodeInfo.Version))
 
+	if s.BlockTime != 0 {
+		sb.WriteString(fmt.Sprintf(" avg block time: %s\n", s.BlockTime))
+	}
+
 	if s.Upgrade == nil {
 		sb.WriteString(" no chain upgrade scheduled\n")
 	} else {
@@ -103,6 +113,11 @@ func (s *State) SerializeChainInfo() string {
 			s.Upgrade.Name,
 			s.Upgrade.Height,
 		))
+
+		if s.BlockTime != 0 {
+			upgradeTime := utils.CalculateTimeTillBlock(s.Height, s.Upgrade.Height, s.BlockTime)
+			sb.WriteString(fmt.Sprintf(" upgrade estimated time: %s\n", utils.SerializeTime(upgradeTime)))
+		}
 	}
 
 	return sb.String()

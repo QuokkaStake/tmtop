@@ -52,3 +52,15 @@ func RightPadAndTrim(source string, desiredLength int) string {
 func LeftPadAndTrim(source string, desiredLength int) string {
 	return PadAndTrim(source, desiredLength, true)
 }
+
+func CalculateTimeTillBlock(currentHeight, requiredHeight int64, blockTime time.Duration) time.Time {
+	blocksTillEstimatedBlock := requiredHeight - currentHeight
+	secondsTillEstimatedBlock := int64(float64(blocksTillEstimatedBlock) * blockTime.Seconds())
+	durationTillEstimatedBlock := time.Duration(secondsTillEstimatedBlock * int64(time.Second))
+
+	return time.Now().Add(durationTillEstimatedBlock)
+}
+
+func SerializeTime(date time.Time) string {
+	return date.Format(time.RFC822)
+}

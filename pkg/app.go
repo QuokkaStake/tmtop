@@ -51,6 +51,7 @@ func (a *App) Start() {
 	go a.GoRefreshValidators()
 	go a.GoRefreshChainInfo()
 	go a.GoRefreshUpgrade()
+	go a.GoRefreshBlockTime()
 	go a.DisplayLogs()
 	go a.ListenForPause()
 
@@ -182,6 +183,37 @@ func (a *App) RefreshUpgrade() {
 	}
 
 	a.State.SetUpgrade(upgrade)
+	a.DisplayWrapper.SetState(a.State)
+}
+
+func (a *App) GoRefreshBlockTime() {
+	a.RefreshBlockTime()
+
+	ticker := time.NewTicker(a.Config.BlockTimeRefreshRate)
+	done := make(chan bool)
+
+	for {
+		select {
+		case <-done:
+			return
+		case <-ticker.C:
+			a.RefreshBlockTime()
+		}
+	}
+}
+
+func (a *App) RefreshBlockTime() {
+	if a.IsPaused {
+		return
+	}
+
+	blockTime, err := a.Aggregator.GetBlockTime()
+	if err != nil {
+		a.Logger.Error().Err(err).Msg("Error getting block time")
+		return
+	}
+
+	a.State.SetBlockTime(blockTime)
 	a.DisplayWrapper.SetState(a.State)
 }
 
