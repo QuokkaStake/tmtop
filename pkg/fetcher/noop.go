@@ -1,6 +1,9 @@
 package fetcher
 
-import "main/pkg/types"
+import (
+	"fmt"
+	"main/pkg/types"
+)
 
 type NoopDataFetcher struct {
 }
@@ -14,5 +17,5 @@ func (f *NoopDataFetcher) GetValidators() (*types.ChainValidators, error) {
 }
 
 func (f *NoopDataFetcher) GetUpgradePlan() (*types.Upgrade, error) {
-	return nil, nil
+	return nil, fmt.Errorf("upgrade is not present")
 }

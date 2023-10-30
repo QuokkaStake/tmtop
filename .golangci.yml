@@ -42,3 +42,4 @@ linters:
     - musttag
     - depguard
     - ireturn
+    - dogsled

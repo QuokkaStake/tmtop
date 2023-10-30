@@ -134,7 +134,7 @@ func (s *State) SerializeConsensusProgressbar(width int) string {
 
 	progressBar := ProgressBar{
 		Width:    width,
-		Height:   2,
+		Height:   3,
 		Progress: prevotePercentInt,
 	}
 

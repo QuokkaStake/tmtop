@@ -80,38 +80,38 @@ func (rpc *RPC) GetValidatorsAtPage(page int) (*types.ValidatorsResponse, error)
 	return &response, nil
 }
 
-func (t *RPC) Block(height int64) (types.TendermintBlockResponse, error) {
-	blockUrl := fmt.Sprintf("/block")
+func (rpc *RPC) Block(height int64) (types.TendermintBlockResponse, error) {
+	blockURL := "/block"
 	if height != 0 {
-		blockUrl = fmt.Sprintf("/block?height=%d", height)
+		blockURL = fmt.Sprintf("/block?height=%d", height)
 	}
 
 	res := types.TendermintBlockResponse{}
-	err := t.Get(blockUrl, &res)
+	err := rpc.Get(blockURL, &res)
 	return res, err
 }
 
-func (t *RPC) GetBlockTime() (time.Duration, error) {
+func (rpc *RPC) GetBlockTime() (time.Duration, error) {
 	var blocksBehind int64 = 1000
 
-	latestBlock, err := t.Block(0)
+	latestBlock, err := rpc.Block(0)
 	if err != nil {
-		t.Logger.Error().Err(err).Msg("Could not fetch current block")
+		rpc.Logger.Error().Err(err).Msg("Could not fetch current block")
 		return 0, err
 	}
 
 	latestBlockHeight, err := strconv.ParseInt(latestBlock.Result.Block.Header.Height, 10, 64)
 	if err != nil {
-		t.Logger.Error().
+		rpc.Logger.Error().
 			Err(err).
 			Msg("Error converting latest block height to int64, which should never happen.")
 		return 0, err
 	}
 	blockToCheck := latestBlockHeight - blocksBehind
 
-	olderBlock, err := t.Block(blockToCheck)
+	olderBlock, err := rpc.Block(blockToCheck)
 	if err != nil {
-		t.Logger.Error().Err(err).Msg("Could not fetch older block")
+		rpc.Logger.Error().Err(err).Msg("Could not fetch older block")
 		return 0, err
 	}
 

@@ -126,7 +126,7 @@ func (f *CosmosDataFetcher) GetUpgradePlan() (*types.Upgrade, error) {
 	}
 
 	if response.Plan == nil {
-		return nil, nil
+		return nil, fmt.Errorf("upgrade plan is not present")
 	}
 
 	return &types.Upgrade{
