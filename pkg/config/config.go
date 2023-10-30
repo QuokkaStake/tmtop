@@ -8,6 +8,7 @@ type Config struct {
 	RefreshRate           time.Duration
 	ValidatorsRefreshRate time.Duration
 	ChainInfoRefreshRate  time.Duration
+	UpgradeRefreshRate    time.Duration
 	QueryValidators       bool
 }
 

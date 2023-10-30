@@ -16,6 +16,7 @@ import (
 	codecTypes "github.com/cosmos/cosmos-sdk/codec/types"
 	queryTypes "github.com/cosmos/cosmos-sdk/types/query"
 	stakingTypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+	upgradeTypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 )
 
 type CosmosDataFetcher struct {
@@ -109,6 +110,29 @@ func (f *CosmosDataFetcher) GetValidators() (*types.ChainValidators, error) {
 	}
 
 	return &validators, nil
+}
+
+func (f *CosmosDataFetcher) GetUpgradePlan() (*types.Upgrade, error) {
+	query := upgradeTypes.QueryCurrentPlanRequest{}
+
+	var response upgradeTypes.QueryCurrentPlanResponse
+	if err := f.AbciQuery(
+		"/cosmos.upgrade.v1beta1.Query/CurrentPlan",
+		&query,
+		&response,
+		f.Config.RPCHost,
+	); err != nil {
+		return nil, err
+	}
+
+	if response.Plan == nil {
+		return nil, nil
+	}
+
+	return &types.Upgrade{
+		Name:   response.Plan.Name,
+		Height: response.Plan.Height,
+	}, nil
 }
 
 func (f *CosmosDataFetcher) Get(relativeURL string, target interface{}, host string) error {

@@ -36,16 +36,7 @@ func main() {
 	rootCmd.PersistentFlags().BoolVar(&config.QueryValidators, "query-validators", true, "Whether to query validators from cosmos-sdk")
 	rootCmd.PersistentFlags().DurationVar(&config.ValidatorsRefreshRate, "validators-refresh-rate", time.Minute, "Validators refresh rate")
 	rootCmd.PersistentFlags().DurationVar(&config.ChainInfoRefreshRate, "chain-info-refresh-rate", 5*time.Minute, "Chain info refresh rate")
-
-	requiredFlags := []string{
-		// "rpc-host",
-	}
-
-	for _, requiredFlag := range requiredFlags {
-		if err := rootCmd.MarkPersistentFlagRequired(requiredFlag); err != nil {
-			logger.GetDefaultLogger().Fatal().Str("flag", requiredFlag).Err(err).Msg("Could not set flag as required")
-		}
-	}
+	rootCmd.PersistentFlags().DurationVar(&config.UpgradeRefreshRate, "upgrade-refresh-rate", 30*time.Minute, "Upgrades refresh rate")
 
 	if err := rootCmd.Execute(); err != nil {
 		logger.GetDefaultLogger().Fatal().Err(err).Msg("Could not start application")

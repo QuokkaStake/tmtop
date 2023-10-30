@@ -16,14 +16,15 @@ const (
 )
 
 type Wrapper struct {
-	InfoTextView     *tview.TextView
-	ProgressTextView *tview.TextView
-	DebugTextView    *tview.TextView
-	Table            *tview.Table
-	TableData        *TableData
-	Grid             *tview.Grid
-	App              *tview.Application
-	InfoBlockWidth   int
+	ConsensusInfoTextView *tview.TextView
+	ChainInfoTextView     *tview.TextView
+	ProgressTextView      *tview.TextView
+	DebugTextView         *tview.TextView
+	Table                 *tview.Table
+	TableData             *TableData
+	Grid                  *tview.Grid
+	App                   *tview.Application
+	InfoBlockWidth        int
 
 	DebugEnabled bool
 
@@ -42,7 +43,11 @@ func NewWrapper(logger zerolog.Logger, pauseChannel chan bool) *Wrapper {
 		// SetSeparator(tview.Borders.Vertical).
 		SetContent(tableData)
 
-	infoTextView := tview.NewTextView().
+	consensusInfoTextView := tview.NewTextView().
+		SetDynamicColors(true).
+		SetRegions(true)
+
+	chainInfoTextView := tview.NewTextView().
 		SetDynamicColors(true).
 		SetRegions(true)
 
@@ -62,18 +67,19 @@ func NewWrapper(logger zerolog.Logger, pauseChannel chan bool) *Wrapper {
 	app := tview.NewApplication().SetRoot(grid, true).SetFocus(table)
 
 	return &Wrapper{
-		InfoTextView:     infoTextView,
-		ProgressTextView: progressTextView,
-		DebugTextView:    debugTextView,
-		Table:            table,
-		TableData:        tableData,
-		Grid:             grid,
-		App:              app,
-		Logger:           logger.With().Str("component", "display_wrapper").Logger(),
-		DebugEnabled:     false,
-		InfoBlockWidth:   2,
-		PauseChannel:     pauseChannel,
-		IsPaused:         false,
+		ChainInfoTextView:     chainInfoTextView,
+		ConsensusInfoTextView: consensusInfoTextView,
+		ProgressTextView:      progressTextView,
+		DebugTextView:         debugTextView,
+		Table:                 table,
+		TableData:             tableData,
+		Grid:                  grid,
+		App:                   app,
+		Logger:                logger.With().Str("component", "display_wrapper").Logger(),
+		DebugEnabled:          false,
+		InfoBlockWidth:        2,
+		PauseChannel:          pauseChannel,
+		IsPaused:              false,
 	}
 }
 
@@ -105,14 +111,16 @@ func (w *Wrapper) Start() {
 
 	w.Grid.SetBackgroundColor(tcell.ColorDefault)
 	w.Table.SetBackgroundColor(tcell.ColorDefault)
-	w.InfoTextView.SetBackgroundColor(tcell.ColorDefault)
+	w.ChainInfoTextView.SetBackgroundColor(tcell.ColorDefault)
+	w.ConsensusInfoTextView.SetBackgroundColor(tcell.ColorDefault)
 	w.ProgressTextView.SetBackgroundColor(tcell.ColorDefault)
 	w.DebugTextView.SetBackgroundColor(tcell.ColorDefault)
 
 	w.Redraw()
 
-	fmt.Fprint(w.InfoTextView, "testtesttest")
-	fmt.Fprint(w.ProgressTextView, "testtesttest")
+	fmt.Fprint(w.ChainInfoTextView, "Loading...")
+	fmt.Fprint(w.ConsensusInfoTextView, "Loading...")
+	fmt.Fprint(w.ProgressTextView, "Loading...")
 
 	w.App.SetBeforeDrawFunc(func(screen tcell.Screen) bool {
 		screen.Clear()
@@ -133,8 +141,10 @@ func (w *Wrapper) ToggleDebug() {
 func (w *Wrapper) SetState(state *types.State) {
 	w.TableData.SetValidators(state.GetValidatorsWithInfo())
 
-	w.InfoTextView.Clear()
-	fmt.Fprint(w.InfoTextView, state.SerializeInfo())
+	w.ConsensusInfoTextView.Clear()
+	w.ChainInfoTextView.Clear()
+	fmt.Fprint(w.ConsensusInfoTextView, state.SerializeConsensus())
+	fmt.Fprint(w.ChainInfoTextView, state.SerializeChainInfo())
 	w.App.Draw()
 }
 
@@ -154,13 +164,15 @@ func (w *Wrapper) ChangeInfoBlockHeight(increase bool) {
 }
 
 func (w *Wrapper) Redraw() {
-	w.Grid.RemoveItem(w.InfoTextView)
+	w.Grid.RemoveItem(w.ConsensusInfoTextView)
+	w.Grid.RemoveItem(w.ChainInfoTextView)
 	w.Grid.RemoveItem(w.ProgressTextView)
 	w.Grid.RemoveItem(w.Table)
 	w.Grid.RemoveItem(w.DebugTextView)
 
-	w.Grid.AddItem(w.InfoTextView, 0, 0, w.InfoBlockWidth, 3, 1, 1, false)
-	w.Grid.AddItem(w.ProgressTextView, 0, 3, w.InfoBlockWidth, 3, 1, 1, false)
+	w.Grid.AddItem(w.ConsensusInfoTextView, 0, 0, w.InfoBlockWidth, 2, 1, 1, false)
+	w.Grid.AddItem(w.ChainInfoTextView, 0, 2, w.InfoBlockWidth, 2, 1, 1, false)
+	w.Grid.AddItem(w.ProgressTextView, 0, 4, w.InfoBlockWidth, 2, 1, 1, false)
 
 	if w.DebugEnabled {
 		w.Grid.AddItem(

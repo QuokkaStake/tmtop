@@ -50,6 +50,7 @@ func (a *App) Start() {
 	go a.GoRefreshConsensus()
 	go a.GoRefreshValidators()
 	go a.GoRefreshChainInfo()
+	go a.GoRefreshUpgrade()
 	go a.DisplayLogs()
 	go a.ListenForPause()
 
@@ -150,6 +151,37 @@ func (a *App) RefreshChainInfo() {
 	}
 
 	a.State.SetChainInfo(&chainInfo.Result)
+	a.DisplayWrapper.SetState(a.State)
+}
+
+func (a *App) GoRefreshUpgrade() {
+	a.RefreshUpgrade()
+
+	ticker := time.NewTicker(a.Config.UpgradeRefreshRate)
+	done := make(chan bool)
+
+	for {
+		select {
+		case <-done:
+			return
+		case <-ticker.C:
+			a.RefreshUpgrade()
+		}
+	}
+}
+
+func (a *App) RefreshUpgrade() {
+	if a.IsPaused {
+		return
+	}
+
+	upgrade, err := a.Aggregator.GetUpgrade()
+	if err != nil {
+		a.Logger.Error().Err(err).Msg("Error getting upgrade")
+		return
+	}
+
+	a.State.SetUpgrade(upgrade)
 	a.DisplayWrapper.SetState(a.State)
 }
 
