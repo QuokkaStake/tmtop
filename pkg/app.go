@@ -19,10 +19,14 @@ type App struct {
 	DisplayWrapper *display.Wrapper
 	State          *types.State
 	LogChannel     chan string
+
+	PauseChannel chan bool
+	IsPaused     bool
 }
 
 func NewApp(config configPkg.Config, version string) *App {
 	logChannel := make(chan string)
+	pauseChannel := make(chan bool)
 
 	logger := loggerPkg.GetLogger(logChannel).
 		With().
@@ -34,9 +38,11 @@ func NewApp(config configPkg.Config, version string) *App {
 		Version:        version,
 		Config:         config,
 		Aggregator:     aggregator.NewAggregator(config, logger),
-		DisplayWrapper: display.NewWrapper(logger),
+		DisplayWrapper: display.NewWrapper(logger, pauseChannel),
 		State:          types.NewState(),
 		LogChannel:     logChannel,
+		PauseChannel:   pauseChannel,
+		IsPaused:       false,
 	}
 }
 
@@ -45,6 +51,7 @@ func (a *App) Start() {
 	go a.GoRefreshValidators()
 	go a.GoRefreshChainInfo()
 	go a.DisplayLogs()
+	go a.ListenForPause()
 
 	a.DisplayWrapper.Start()
 }
@@ -66,6 +73,10 @@ func (a *App) GoRefreshConsensus() {
 }
 
 func (a *App) RefreshConsensus() {
+	if a.IsPaused {
+		return
+	}
+
 	consensus, validators, err := a.Aggregator.GetData()
 	if err != nil {
 		a.Logger.Error().Err(err).Msg("Error getting consensus data")
@@ -97,6 +108,10 @@ func (a *App) GoRefreshValidators() {
 }
 
 func (a *App) RefreshValidators() {
+	if a.IsPaused {
+		return
+	}
+
 	chainValidators, err := a.Aggregator.GetChainValidators()
 	if err != nil {
 		a.Logger.Error().Err(err).Msg("Error getting chain validators")
@@ -124,6 +139,10 @@ func (a *App) GoRefreshChainInfo() {
 }
 
 func (a *App) RefreshChainInfo() {
+	if a.IsPaused {
+		return
+	}
+
 	chainInfo, err := a.Aggregator.GetChainInfo()
 	if err != nil {
 		a.Logger.Error().Err(err).Msg("Error getting chain validators")
@@ -138,5 +157,12 @@ func (a *App) DisplayLogs() {
 	for {
 		logString := <-a.LogChannel
 		a.DisplayWrapper.DebugText(logString)
+	}
+}
+
+func (a *App) ListenForPause() {
+	for {
+		paused := <-a.PauseChannel
+		a.IsPaused = paused
 	}
 }

@@ -80,6 +80,7 @@ func (s *State) SerializeInfo() string {
 		s.Validators.GetTotalVotingPowerPrecommittedPercent(true),
 		s.Validators.GetTotalVotingPowerPrecommittedPercent(false),
 	))
+	sb.WriteString(fmt.Sprintf(" last updated at: %s\n", time.Now()))
 
 	return sb.String()
 }

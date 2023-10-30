@@ -28,9 +28,12 @@ type Wrapper struct {
 	DebugEnabled bool
 
 	Logger zerolog.Logger
+
+	PauseChannel chan bool
+	IsPaused     bool
 }
 
-func NewWrapper(logger zerolog.Logger) *Wrapper {
+func NewWrapper(logger zerolog.Logger, pauseChannel chan bool) *Wrapper {
 	tableData := NewTableData(ColumnsAmount)
 
 	table := tview.NewTable().
@@ -69,6 +72,8 @@ func NewWrapper(logger zerolog.Logger) *Wrapper {
 		Logger:           logger.With().Str("component", "display_wrapper").Logger(),
 		DebugEnabled:     false,
 		InfoBlockWidth:   2,
+		PauseChannel:     pauseChannel,
+		IsPaused:         false,
 	}
 }
 
@@ -88,6 +93,11 @@ func (w *Wrapper) Start() {
 
 		if event.Rune() == 's' {
 			w.ChangeInfoBlockHeight(false)
+		}
+
+		if event.Rune() == 'p' {
+			w.IsPaused = !w.IsPaused
+			w.PauseChannel <- w.IsPaused
 		}
 
 		return event
