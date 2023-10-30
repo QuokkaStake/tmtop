@@ -43,6 +43,7 @@ func (f *CosmosDataFetcher) AbciQuery(
 	method string,
 	message codec.ProtoMarshaler,
 	output codec.ProtoMarshaler,
+	host string,
 ) error {
 	dataBytes, err := message.Marshal()
 	if err != nil {
@@ -57,7 +58,7 @@ func (f *CosmosDataFetcher) AbciQuery(
 	)
 
 	var response types.AbciQueryResponse
-	if err := f.Get(queryURL, &response); err != nil {
+	if err := f.Get(queryURL, &response, host); err != nil {
 		return err
 	}
 
@@ -84,6 +85,7 @@ func (f *CosmosDataFetcher) GetValidators() (*types.ChainValidators, error) {
 		"/cosmos.staking.v1beta1.Query/Validators",
 		&query,
 		&validatorsResponse,
+		f.Config.GetProviderOrConsumerHost(),
 	); err != nil {
 		return nil, err
 	}
@@ -109,29 +111,29 @@ func (f *CosmosDataFetcher) GetValidators() (*types.ChainValidators, error) {
 	return &validators, nil
 }
 
-func (f *CosmosDataFetcher) Get(relativeURL string, target interface{}) error {
+func (f *CosmosDataFetcher) Get(relativeURL string, target interface{}, host string) error {
 	client := &http.Client{Timeout: 300 * time.Second}
 	start := time.Now()
 
-	url := fmt.Sprintf("%s%s", f.Config.RPCHost, relativeURL)
+	fullURL := fmt.Sprintf("%s%s", host, relativeURL)
 
-	req, err := http.NewRequest(http.MethodGet, url, nil)
+	req, err := http.NewRequest(http.MethodGet, fullURL, nil)
 	if err != nil {
 		return err
 	}
 
 	req.Header.Set("User-Agent", "tmtop")
 
-	f.Logger.Debug().Str("url", url).Msg("Doing a query...")
+	f.Logger.Debug().Str("url", fullURL).Msg("Doing a query...")
 
 	res, err := client.Do(req)
 	if err != nil {
-		f.Logger.Warn().Str("url", url).Err(err).Msg("Query failed")
+		f.Logger.Warn().Str("url", fullURL).Err(err).Msg("Query failed")
 		return err
 	}
 	defer res.Body.Close()
 
-	f.Logger.Debug().Str("url", url).Dur("duration", time.Since(start)).Msg("Query is finished")
+	f.Logger.Debug().Str("url", fullURL).Dur("duration", time.Since(start)).Msg("Query is finished")
 
 	return json.NewDecoder(res.Body).Decode(target)
 }
