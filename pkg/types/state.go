@@ -75,7 +75,10 @@ func (s *State) SerializeConsensus() string {
 	var sb strings.Builder
 
 	sb.WriteString(fmt.Sprintf(" height=%d round=%d step=%d\n", s.Height, s.Round, s.Step))
-	sb.WriteString(fmt.Sprintf(" block time: %s\n", utils.ZeroOrPositiveDuration(time.Since(s.StartTime))))
+	sb.WriteString(fmt.Sprintf(
+		" block time: %s\n",
+		utils.ZeroOrPositiveDuration(utils.SerializeDuration(time.Since(s.StartTime))),
+	))
 	sb.WriteString(fmt.Sprintf(
 		" prevote consensus (total/agreeing): %.2f / %.2f\n",
 		s.Validators.GetTotalVotingPowerPrevotedPercent(true),
@@ -102,7 +105,7 @@ func (s *State) SerializeChainInfo() string {
 	sb.WriteString(fmt.Sprintf(" tendermint version: v%s\n", s.ChainInfo.NodeInfo.Version))
 
 	if s.BlockTime != 0 {
-		sb.WriteString(fmt.Sprintf(" avg block time: %s\n", s.BlockTime))
+		sb.WriteString(fmt.Sprintf(" avg block time: %s\n", utils.SerializeDuration(s.BlockTime)))
 	}
 
 	if s.Upgrade == nil {

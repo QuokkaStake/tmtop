@@ -2,6 +2,7 @@ package utils
 
 import (
 	loggerPkg "main/pkg/logger"
+	"math"
 	"strconv"
 	"time"
 )
@@ -62,5 +63,16 @@ func CalculateTimeTillBlock(currentHeight, requiredHeight int64, blockTime time.
 }
 
 func SerializeTime(date time.Time) string {
-	return date.Format(time.RFC822)
+	return date.Format(time.RFC850)
+}
+
+func SerializeDuration(duration time.Duration) time.Duration {
+	digits := 3
+	denom := time.Duration(math.Pow(float64(10), float64(digits)))
+
+	if duration > time.Second {
+		return duration.Round(time.Second / denom)
+	}
+
+	return duration.Round(time.Millisecond / denom)
 }
