@@ -38,7 +38,7 @@ func NewApp(config configPkg.Config, version string) *App {
 		Version:        version,
 		Config:         config,
 		Aggregator:     aggregator.NewAggregator(config, logger),
-		DisplayWrapper: display.NewWrapper(logger, pauseChannel),
+		DisplayWrapper: display.NewWrapper(logger, pauseChannel, version),
 		State:          types.NewState(),
 		LogChannel:     logChannel,
 		PauseChannel:   pauseChannel,

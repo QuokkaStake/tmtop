@@ -1,0 +1,12 @@
+tmtop version {{ Version }}
+
+A tool to display consensus on Tendermint-based chains.
+
+Created by 🐹 Quokka Stake with ❤️.
+
+You can use the following shortcuts:
+- enable [d[]ebug panel
+- make the info blocks above [b[]igger or [s[]maller
+- display or hide this [h[]elp message
+- [p[]ause new updates
+- [q[]uit the app (or Ctrl+C)

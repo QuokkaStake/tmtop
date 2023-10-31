@@ -3,6 +3,8 @@ package display
 import (
 	"fmt"
 	"main/pkg/types"
+	"main/static"
+	"strings"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -23,7 +25,9 @@ type Wrapper struct {
 	Table                 *tview.Table
 	TableData             *TableData
 	Grid                  *tview.Grid
+	Pages                 *tview.Pages
 	App                   *tview.Application
+	HelpModal             *tview.Modal
 
 	InfoBlockWidth int
 
@@ -33,15 +37,19 @@ type Wrapper struct {
 
 	PauseChannel chan bool
 	IsPaused     bool
+
+	IsHelpDisplayed bool
 }
 
-func NewWrapper(logger zerolog.Logger, pauseChannel chan bool) *Wrapper {
+func NewWrapper(logger zerolog.Logger, pauseChannel chan bool, appVersion string) *Wrapper {
 	tableData := NewTableData(ColumnsAmount)
+
+	helpTextBytes, _ := static.TemplatesFs.ReadFile("help.txt")
+	helpText := strings.ReplaceAll(string(helpTextBytes), "{{ Version }}", appVersion)
 
 	table := tview.NewTable().
 		SetBorders(false).
 		SetSelectable(false, false).
-		// SetSeparator(tview.Borders.Vertical).
 		SetContent(tableData)
 
 	consensusInfoTextView := tview.NewTextView().
@@ -60,12 +68,17 @@ func NewWrapper(logger zerolog.Logger, pauseChannel chan bool) *Wrapper {
 		SetDynamicColors(true).
 		SetRegions(true)
 
+	helpModal := tview.NewModal().
+		SetText(string(helpText))
+
 	grid := tview.NewGrid().
 		SetRows(0, 0, 0, 0, 0, 0, 0, 0, 0, 0).
 		SetColumns(0, 0, 0, 0, 0, 0).
 		SetBorders(true)
 
-	app := tview.NewApplication().SetRoot(grid, true).SetFocus(table)
+	pages := tview.NewPages().AddPage("grid", grid, true, true)
+
+	app := tview.NewApplication().SetRoot(pages, true).SetFocus(table)
 
 	return &Wrapper{
 		ChainInfoTextView:     chainInfoTextView,
@@ -74,13 +87,16 @@ func NewWrapper(logger zerolog.Logger, pauseChannel chan bool) *Wrapper {
 		DebugTextView:         debugTextView,
 		Table:                 table,
 		TableData:             tableData,
+		HelpModal:             helpModal,
 		Grid:                  grid,
+		Pages:                 pages,
 		App:                   app,
 		Logger:                logger.With().Str("component", "display_wrapper").Logger(),
 		DebugEnabled:          false,
 		InfoBlockWidth:        2,
 		PauseChannel:          pauseChannel,
 		IsPaused:              false,
+		IsHelpDisplayed:       false,
 	}
 }
 
@@ -100,6 +116,10 @@ func (w *Wrapper) Start() {
 
 		if event.Rune() == 's' {
 			w.ChangeInfoBlockHeight(false)
+		}
+
+		if event.Rune() == 'h' {
+			w.ToggleHelp()
 		}
 
 		if event.Rune() == 'p' {
@@ -135,6 +155,12 @@ func (w *Wrapper) Start() {
 
 func (w *Wrapper) ToggleDebug() {
 	w.DebugEnabled = !w.DebugEnabled
+
+	w.Redraw()
+}
+
+func (w *Wrapper) ToggleHelp() {
+	w.IsHelpDisplayed = !w.IsHelpDisplayed
 
 	w.Redraw()
 }
@@ -215,5 +241,11 @@ func (w *Wrapper) Redraw() {
 			0,
 			false,
 		)
+	}
+
+	if w.IsHelpDisplayed {
+		w.Pages.AddPage("modal", w.HelpModal, true, true)
+	} else {
+		w.Pages.RemovePage("modal")
 	}
 }
