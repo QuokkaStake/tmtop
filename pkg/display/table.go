@@ -39,7 +39,11 @@ func (d *TableData) GetCell(row, column int) *tview.TableCell {
 }
 
 func (d *TableData) GetRowCount() int {
-	return len(d.Validators) / d.ColumnsCount
+	if len(d.Validators)%d.ColumnsCount == 0 {
+		return len(d.Validators) / d.ColumnsCount
+	}
+
+	return len(d.Validators)/d.ColumnsCount + 1
 }
 
 func (d *TableData) GetColumnCount() int {
