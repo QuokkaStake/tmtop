@@ -68,8 +68,7 @@ func NewWrapper(logger zerolog.Logger, pauseChannel chan bool, appVersion string
 		SetDynamicColors(true).
 		SetRegions(true)
 
-	helpModal := tview.NewModal().
-		SetText(string(helpText))
+	helpModal := tview.NewModal().SetText(helpText)
 
 	grid := tview.NewGrid().
 		SetRows(0, 0, 0, 0, 0, 0, 0, 0, 0, 0).
