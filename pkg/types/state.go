@@ -120,6 +120,10 @@ func (s *State) SerializeChainInfo() string {
 		if s.BlockTime != 0 {
 			upgradeTime := utils.CalculateTimeTillBlock(s.Height, s.Upgrade.Height, s.BlockTime)
 			sb.WriteString(fmt.Sprintf(" upgrade estimated time: %s\n", utils.SerializeTime(upgradeTime)))
+			sb.WriteString(fmt.Sprintf(
+				" time till upgrade: %s\n",
+				utils.SerializeDuration(time.Until(upgradeTime)),
+			))
 		}
 	}
 
