@@ -2,7 +2,6 @@
 
 ![Latest release](https://img.shields.io/github/v/release/QuokkaStake/tmtop)
 [![Actions Status](https://github.com/QuokkaStake/tmtop/workflows/test/badge.svg)](https://github.com/QuokkaStake/tmtop/actions)
-[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FQuokkaStake%2Ftmtop.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2FQuokkaStake%2Ftmtop?ref=badge_shield)
 
 tmtop is a tool that can visualize the consensus on any Tendermint-based chain in a top-like way.
 It is heavily inspired by [pvtop](https://github.com/blockpane/pvtop) and is in fact a from-scratch rewrite of it.
