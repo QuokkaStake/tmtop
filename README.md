@@ -13,6 +13,9 @@ It can do the following:
 - work with non cosmos-sdk chains (for instance, Nomic; it won't be able to display the validators' monikers then)
 - work with ICS (fetching the validators list from the provider chain while taking the consensus from the consumer chain)
 
+See how it looks like (on Sentinel chain, which is cosmos-sdk based chain, and Nomic, which uses Tendermint but not cosmos-sdk):
+[![asciicast](https://asciinema.org/a/pnmH6j1MHGNdUY8y4eF2Ut21M.svg)](https://asciinema.org/a/pnmH6j1MHGNdUY8y4eF2Ut21M)
+
 ## How can I set it up?
 
 Download the latest release from [the releases page](https://github.com/QuokkaStake/tmtop/releases/). After that, you should unzip it, and you are ready to go:
