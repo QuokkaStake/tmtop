@@ -1,6 +1,6 @@
 module main
 
-go 1.21
+go 1.18
 
 require (
 	github.com/cosmos/cosmos-sdk v0.45.16-ics
