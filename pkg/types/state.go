@@ -35,18 +35,19 @@ func (s *State) SetTendermintResponse(
 	consensus *ConsensusStateResponse,
 	tendermintValidators []TendermintValidator,
 ) error {
-	validators, err := ValidatorsFromTendermintResponse(consensus, tendermintValidators)
-	if err != nil {
-		return err
-	}
-
 	hrsSplit := strings.Split(consensus.Result.RoundState.HeightRoundStep, "/")
 
-	s.Validators = &validators
 	s.Height = utils.MustParseInt64(hrsSplit[0])
 	s.Round = utils.MustParseInt64(hrsSplit[1])
 	s.Step = utils.MustParseInt64(hrsSplit[2])
 	s.StartTime = consensus.Result.RoundState.StartTime
+
+	validators, err := ValidatorsFromTendermintResponse(consensus, tendermintValidators, s.Round)
+	if err != nil {
+		return err
+	}
+
+	s.Validators = &validators
 
 	return nil
 }

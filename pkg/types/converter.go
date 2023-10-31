@@ -9,11 +9,13 @@ import (
 func ValidatorsFromTendermintResponse(
 	consensus *ConsensusStateResponse,
 	tendermintValidators []TendermintValidator,
+	round int64,
 ) (Validators, error) {
-	validators := make(Validators, len(consensus.Result.RoundState.HeightVoteSet[0].Prevotes))
+	lastHeightVoteSet := consensus.Result.RoundState.HeightVoteSet[round]
+	validators := make(Validators, len(lastHeightVoteSet.Prevotes))
 
-	for index, prevote := range consensus.Result.RoundState.HeightVoteSet[0].Prevotes {
-		precommit := consensus.Result.RoundState.HeightVoteSet[0].Precommits[index]
+	for index, prevote := range lastHeightVoteSet.Prevotes {
+		precommit := lastHeightVoteSet.Precommits[index]
 		validator := tendermintValidators[index]
 
 		vp := new(big.Int)
