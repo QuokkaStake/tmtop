@@ -177,7 +177,6 @@ func (w *Wrapper) SetState(state *types.State) {
 	fmt.Fprint(w.ProgressTextView, state.SerializePrevotesProgressbar(width, height/2))
 	fmt.Fprint(w.ProgressTextView, "\n")
 	fmt.Fprint(w.ProgressTextView, state.SerializePrecommitsProgressbar(width, height/2))
-	w.ProgressTextView.Highlight("progress")
 
 	w.App.Draw()
 }
