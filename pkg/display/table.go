@@ -21,6 +21,10 @@ func NewTableData(columnsCount int) *TableData {
 	}
 }
 
+func (d *TableData) SetColumnsCount(count int) {
+	d.ColumnsCount = count
+}
+
 func (d *TableData) GetCell(row, column int) *tview.TableCell {
 	index := row*d.ColumnsCount + column
 	text := ""
