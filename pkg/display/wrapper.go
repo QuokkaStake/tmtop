@@ -12,9 +12,9 @@ import (
 )
 
 const (
-	ColumnsAmount    = 3
-	RowsAmount       = 10
-	DebugBlockHeight = 2
+	DefaultColumnsCount = 3
+	RowsAmount          = 10
+	DebugBlockHeight    = 2
 )
 
 type Wrapper struct {
@@ -30,6 +30,7 @@ type Wrapper struct {
 	HelpModal             *tview.Modal
 
 	InfoBlockWidth int
+	ColumnsCount   int
 
 	DebugEnabled bool
 
@@ -42,7 +43,7 @@ type Wrapper struct {
 }
 
 func NewWrapper(logger zerolog.Logger, pauseChannel chan bool, appVersion string) *Wrapper {
-	tableData := NewTableData(ColumnsAmount)
+	tableData := NewTableData(DefaultColumnsCount)
 
 	helpTextBytes, _ := static.TemplatesFs.ReadFile("help.txt")
 	helpText := strings.ReplaceAll(string(helpTextBytes), "{{ Version }}", appVersion)
@@ -93,6 +94,7 @@ func NewWrapper(logger zerolog.Logger, pauseChannel chan bool, appVersion string
 		Logger:                logger.With().Str("component", "display_wrapper").Logger(),
 		DebugEnabled:          false,
 		InfoBlockWidth:        2,
+		ColumnsCount:          DefaultColumnsCount,
 		PauseChannel:          pauseChannel,
 		IsPaused:              false,
 		IsHelpDisplayed:       false,
@@ -119,6 +121,14 @@ func (w *Wrapper) Start() {
 
 		if event.Rune() == 'h' {
 			w.ToggleHelp()
+		}
+
+		if event.Rune() == 'm' {
+			w.ChangeColumnsCount(true)
+		}
+
+		if event.Rune() == 'l' {
+			w.ChangeColumnsCount(false)
 		}
 
 		if event.Rune() == 'p' {
@@ -177,7 +187,6 @@ func (w *Wrapper) SetState(state *types.State) {
 	fmt.Fprint(w.ProgressTextView, state.SerializePrevotesProgressbar(width, height/2))
 	fmt.Fprint(w.ProgressTextView, "\n")
 	fmt.Fprint(w.ProgressTextView, state.SerializePrecommitsProgressbar(width, height/2))
-	w.ProgressTextView.Highlight("progress")
 
 	w.App.Draw()
 }
@@ -193,6 +202,18 @@ func (w *Wrapper) ChangeInfoBlockHeight(increase bool) {
 	} else if !increase && w.InfoBlockWidth-1 >= 1 {
 		w.InfoBlockWidth--
 	}
+
+	w.Redraw()
+}
+
+func (w *Wrapper) ChangeColumnsCount(increase bool) {
+	if increase {
+		w.ColumnsCount++
+	} else if !increase && w.ColumnsCount-1 >= 1 {
+		w.ColumnsCount--
+	}
+
+	w.TableData.SetColumnsCount(w.ColumnsCount)
 
 	w.Redraw()
 }

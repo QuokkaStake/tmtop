@@ -90,6 +90,26 @@ func (s *State) SerializeConsensus() string {
 		s.Validators.GetTotalVotingPowerPrecommittedPercent(true),
 		s.Validators.GetTotalVotingPowerPrecommittedPercent(false),
 	))
+
+	prevoted := 0
+	precommitted := 0
+
+	for _, validator := range *s.Validators {
+		if validator.Prevote != VotedNil {
+			prevoted += 1
+		}
+		if validator.Precommit != VotedNil {
+			precommitted += 1
+		}
+	}
+
+	sb.WriteString(fmt.Sprintf(
+		" prevoted/precommitted: %d/%d (out of %d)\n",
+		prevoted,
+		precommitted,
+		len(*s.Validators),
+	))
+
 	sb.WriteString(fmt.Sprintf(" last updated at: %s\n", utils.SerializeTime(time.Now())))
 
 	return sb.String()
@@ -147,7 +167,7 @@ func (s *State) SerializePrevotesProgressbar(width int, height int) string {
 		return ""
 	}
 
-	prevotePercent := s.Validators.GetTotalVotingPowerPrevotedPercent(false)
+	prevotePercent := s.Validators.GetTotalVotingPowerPrevotedPercent(true)
 	prevotePercentFloat, _ := prevotePercent.Float64()
 	prevotePercentInt := int(prevotePercentFloat)
 
@@ -159,7 +179,7 @@ func (s *State) SerializePrecommitsProgressbar(width int, height int) string {
 		return ""
 	}
 
-	precommitPercent := s.Validators.GetTotalVotingPowerPrecommittedPercent(false)
+	precommitPercent := s.Validators.GetTotalVotingPowerPrecommittedPercent(true)
 	precommitPercentFloat, _ := precommitPercent.Float64()
 	precommitPercentInt := int(precommitPercentFloat)
 

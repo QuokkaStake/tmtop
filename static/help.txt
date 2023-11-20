@@ -7,6 +7,7 @@ Created by 🐹 Quokka Stake with ❤️.
 You can use the following shortcuts:
 - enable [d[]ebug panel
 - make the info blocks above [b[]igger or [s[]maller
+- display [m[]more or [l[]ess columns in validators table
 - display or hide this [h[]elp message
 - [p[]ause new updates
 - [q[]uit the app (or Ctrl+C)

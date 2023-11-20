@@ -19,16 +19,27 @@ func (p ProgressBar) Serialize() string {
 	percentTextStart := (p.Width - len(percentText)) / 2
 	percentTextLine := (p.Height+1)/2 - 1
 
+	isColored := func(value bool) string {
+		if value {
+			return "green"
+		}
+
+		return "-"
+	}
+
 	for lineIndex := 0; lineIndex < p.Height; lineIndex++ {
-		line := "[\"progress\"]"
-		terminated := false
+		line := ""
+		format := ""
 
 		for index := 0; index < p.Width; index++ {
 			percent := int(float64(index) / float64(p.Width) * 100)
 
-			if percent > p.Progress && !terminated {
-				terminated = true
-				line += "[\"\"]"
+			isBackgroundColored := percent <= p.Progress
+
+			newFormat := fmt.Sprintf("[white:%s]", isColored(isBackgroundColored))
+			if format != newFormat {
+				format = newFormat
+				line += format
 			}
 
 			if lineIndex == percentTextLine && (index >= percentTextStart && index < percentTextStart+len(percentText)) {
@@ -36,10 +47,6 @@ func (p ProgressBar) Serialize() string {
 			} else {
 				line += " "
 			}
-		}
-
-		if !terminated {
-			line += "[\"\"]"
 		}
 
 		sb.WriteString(line + "\n")
