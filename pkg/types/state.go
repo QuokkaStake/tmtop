@@ -90,6 +90,26 @@ func (s *State) SerializeConsensus() string {
 		s.Validators.GetTotalVotingPowerPrecommittedPercent(true),
 		s.Validators.GetTotalVotingPowerPrecommittedPercent(false),
 	))
+
+	prevoted := 0
+	precommitted := 0
+
+	for _, validator := range *s.Validators {
+		if validator.Prevote != VotedNil {
+			prevoted += 1
+		}
+		if validator.Precommit != VotedNil {
+			precommitted += 1
+		}
+	}
+
+	sb.WriteString(fmt.Sprintf(
+		" prevoted/precommitted: %d/%d (out of %d)\n",
+		prevoted,
+		precommitted,
+		len(*s.Validators),
+	))
+
 	sb.WriteString(fmt.Sprintf(" last updated at: %s\n", utils.SerializeTime(time.Now())))
 
 	return sb.String()
