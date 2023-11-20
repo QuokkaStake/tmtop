@@ -147,7 +147,7 @@ func (s *State) SerializePrevotesProgressbar(width int, height int) string {
 		return ""
 	}
 
-	prevotePercent := s.Validators.GetTotalVotingPowerPrevotedPercent(false)
+	prevotePercent := s.Validators.GetTotalVotingPowerPrevotedPercent(true)
 	prevotePercentFloat, _ := prevotePercent.Float64()
 	prevotePercentInt := int(prevotePercentFloat)
 
@@ -159,7 +159,7 @@ func (s *State) SerializePrecommitsProgressbar(width int, height int) string {
 		return ""
 	}
 
-	precommitPercent := s.Validators.GetTotalVotingPowerPrecommittedPercent(false)
+	precommitPercent := s.Validators.GetTotalVotingPowerPrecommittedPercent(true)
 	precommitPercentFloat, _ := precommitPercent.Float64()
 	precommitPercentInt := int(precommitPercentFloat)
 
