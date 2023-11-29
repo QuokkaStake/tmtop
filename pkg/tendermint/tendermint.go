@@ -46,6 +46,10 @@ func (rpc *RPC) GetValidators() ([]types.TendermintValidator, error) {
 			return nil, err
 		}
 
+		if response == nil || response.Result == nil || response.Result.Total == "" {
+			return nil, fmt.Errorf("malformed response from node")
+		}
+
 		total, err := strconv.ParseInt(response.Result.Total, 10, 64)
 		if err != nil {
 			return nil, err
