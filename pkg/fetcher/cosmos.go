@@ -3,13 +3,14 @@ package fetcher
 import (
 	"encoding/json"
 	"fmt"
-	sdkTypes "github.com/cosmos/cosmos-sdk/types"
 	configPkg "main/pkg/config"
 	"main/pkg/types"
 	"net/http"
 	"net/url"
 	"sync"
 	"time"
+
+	sdkTypes "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/cosmos/cosmos-sdk/std"
 	"github.com/rs/zerolog"

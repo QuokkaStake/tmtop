@@ -17,7 +17,6 @@ func (c ChainValidators) ToMap() map[string]ChainValidator {
 		valsMap[validator.Address] = validator
 		if validator.RawAssignedAddress != "" {
 			valsMap[validator.RawAssignedAddress] = validator
-
 		}
 	}
 
