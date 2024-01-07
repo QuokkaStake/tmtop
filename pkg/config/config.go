@@ -5,6 +5,7 @@ import "time"
 type Config struct {
 	RPCHost               string
 	ProviderRPCHost       string
+	ConsumerChainID       string
 	RefreshRate           time.Duration
 	ValidatorsRefreshRate time.Duration
 	ChainInfoRefreshRate  time.Duration
@@ -19,4 +20,8 @@ func (c Config) GetProviderOrConsumerHost() string {
 	}
 
 	return c.RPCHost
+}
+
+func (c Config) IsProvider() bool {
+	return c.ProviderRPCHost != ""
 }

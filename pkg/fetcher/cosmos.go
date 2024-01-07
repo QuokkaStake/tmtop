@@ -7,7 +7,10 @@ import (
 	"main/pkg/types"
 	"net/http"
 	"net/url"
+	"sync"
 	"time"
+
+	sdkTypes "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/cosmos/cosmos-sdk/std"
 	"github.com/rs/zerolog"
@@ -17,6 +20,7 @@ import (
 	queryTypes "github.com/cosmos/cosmos-sdk/types/query"
 	stakingTypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	upgradeTypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
+	providerTypes "github.com/cosmos/interchain-security/x/ccv/provider/types"
 )
 
 type CosmosDataFetcher struct {
@@ -38,6 +42,27 @@ func NewCosmosDataFetcher(config configPkg.Config, logger zerolog.Logger) *Cosmo
 		Registry:   interfaceRegistry,
 		ParseCodec: parseCodec,
 	}
+}
+
+func (f *CosmosDataFetcher) GetValidatorAssignedConsumerKey(
+	providerValcons string,
+) (*providerTypes.QueryValidatorConsumerAddrResponse, error) {
+	query := providerTypes.QueryValidatorConsumerAddrRequest{
+		ChainId:         f.Config.ConsumerChainID,
+		ProviderAddress: providerValcons,
+	}
+
+	var response providerTypes.QueryValidatorConsumerAddrResponse
+	if err := f.AbciQuery(
+		"/interchain_security.ccv.provider.v1.Query/QueryValidatorConsumerAddr",
+		&query,
+		&response,
+		f.Config.ProviderRPCHost,
+	); err != nil {
+		return nil, err
+	}
+
+	return &response, nil
 }
 
 func (f *CosmosDataFetcher) AbciQuery(
@@ -104,10 +129,44 @@ func (f *CosmosDataFetcher) GetValidators() (*types.ChainValidators, error) {
 		}
 
 		validators[index] = types.ChainValidator{
-			Moniker: validator.GetMoniker(),
-			Address: fmt.Sprintf("%x", addr),
+			Moniker:    validator.GetMoniker(),
+			Address:    fmt.Sprintf("%X", addr),
+			RawAddress: addr.String(),
 		}
 	}
+
+	if !f.Config.IsProvider() {
+		return &validators, nil
+	}
+
+	// fetching assigned keys
+	var wg sync.WaitGroup
+	var mutex sync.Mutex
+
+	for index, validator := range validators {
+		wg.Add(1)
+		go func(validator types.ChainValidator, index int) {
+			defer wg.Done()
+			assignedKey, err := f.GetValidatorAssignedConsumerKey(validator.RawAddress)
+
+			if err != nil {
+				f.Logger.Error().Err(err).Msg("Could not fetch assigned key")
+				return
+			}
+
+			assignedKeyAsString := assignedKey.GetConsumerAddress()
+			if assignedKeyAsString != "" {
+				addr, _ := sdkTypes.ConsAddressFromBech32(assignedKeyAsString)
+
+				mutex.Lock()
+				validators[index].AssignedAddress = addr.String()
+				validators[index].RawAssignedAddress = fmt.Sprintf("%X", addr)
+				mutex.Unlock()
+			}
+		}(validator, index)
+	}
+
+	wg.Wait()
 
 	return &validators, nil
 }

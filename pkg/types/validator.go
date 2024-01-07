@@ -74,6 +74,9 @@ func (v ValidatorWithInfo) Serialize() string {
 	name := v.Validator.Address
 	if v.ChainValidator != nil {
 		name = v.ChainValidator.Moniker
+		if v.ChainValidator.AssignedAddress != "" {
+			name = "🔑 " + name
+		}
 	}
 
 	return fmt.Sprintf(
