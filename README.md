@@ -26,7 +26,7 @@ tar <downloaded file>
 ./tmtop --config <path to config>
 ```
 
-Alternatively, install `golang` (>1.18), clone the repo and build it:
+Alternatively, install `golang` (>=1.21), clone the repo and build it:
 ```
 git clone https://github.com/QuokkaStake/tmtop
 cd tmtop
