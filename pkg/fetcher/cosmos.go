@@ -135,7 +135,7 @@ func (f *CosmosDataFetcher) GetValidators() (*types.ChainValidators, error) {
 		}
 	}
 
-	if !f.Config.IsProvider() {
+	if !f.Config.IsConsumer() {
 		return &validators, nil
 	}
 

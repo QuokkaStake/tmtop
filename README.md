@@ -41,7 +41,26 @@ Then just run it:
 ./tmtop [args]
 ```
 
-For possible arguments, see `./tmtop --help`.
+To run it for a sovereign Cosmos-based chain, something like this should be enough:
+```
+./tmtop --rpc-host <RPC host address>
+```
+
+To run it for a sovereign chain that is not Cosmos-based (for example, Nomic), something like this should be enough
+(this will limit the app possibilities, as in, it won't display validators monikers,
+upgrades status etc.):
+```
+/tmtop  --rpc-host <RPC host address> --chain-type tendermint
+```
+
+To run it for a Cosmos-based consumer chains (like Stride or Neutron),
+something like this should be enough:
+```
+/tmtop  --rpc-host <RPC host address> --provider-rpc-host <provider RPC host> --consumer-chain-id <consumer chain ID>
+```
+
+There are more parameters to tweak, for all the possible arguments, see `./tmtop --help`.
+
 
 ## How does it work?
 

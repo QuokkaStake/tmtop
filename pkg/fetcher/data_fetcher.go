@@ -13,7 +13,7 @@ type DataFetcher interface {
 }
 
 func GetDataFetcher(config configPkg.Config, logger zerolog.Logger) DataFetcher {
-	if config.QueryValidators {
+	if config.ChainType == "cosmos" {
 		return NewCosmosDataFetcher(config, logger)
 	}
 
