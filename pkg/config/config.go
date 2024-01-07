@@ -1,6 +1,10 @@
 package config
 
-import "time"
+import (
+	"fmt"
+	"slices"
+	"time"
+)
 
 type Config struct {
 	RPCHost               string
@@ -11,7 +15,8 @@ type Config struct {
 	ChainInfoRefreshRate  time.Duration
 	UpgradeRefreshRate    time.Duration
 	BlockTimeRefreshRate  time.Duration
-	QueryValidators       bool
+	ChainType             string
+	Verbose               bool
 }
 
 func (c Config) GetProviderOrConsumerHost() string {
@@ -22,6 +27,18 @@ func (c Config) GetProviderOrConsumerHost() string {
 	return c.RPCHost
 }
 
-func (c Config) IsProvider() bool {
+func (c Config) IsConsumer() bool {
 	return c.ProviderRPCHost != ""
+}
+
+func (c Config) Validate() error {
+	if !slices.Contains([]string{"cosmos", "tendermint"}, c.ChainType) {
+		return fmt.Errorf("expected chain-type to be one of 'cosmos', 'tendermint', but got '%s'", c.ChainType)
+	}
+
+	if c.IsConsumer() && c.ConsumerChainID == "" {
+		return fmt.Errorf("chain is consumer, but consumer-chain-id is not set")
+	}
+
+	return nil
 }

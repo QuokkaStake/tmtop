@@ -28,7 +28,7 @@ func NewApp(config configPkg.Config, version string) *App {
 	logChannel := make(chan string)
 	pauseChannel := make(chan bool)
 
-	logger := loggerPkg.GetLogger(logChannel).
+	logger := loggerPkg.GetLogger(logChannel, config).
 		With().
 		Str("component", "app_manager").
 		Logger()

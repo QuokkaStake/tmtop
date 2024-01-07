@@ -2,6 +2,7 @@ package logger
 
 import (
 	"io"
+	configPkg "main/pkg/config"
 	"os"
 
 	"github.com/rs/zerolog"
@@ -22,10 +23,15 @@ func (w Writer) Write(msg []byte) (int, error) {
 	return len(msg), nil
 }
 
-func GetLogger(logChannel chan string) *zerolog.Logger {
+func GetLogger(logChannel chan string, config configPkg.Config) *zerolog.Logger {
 	writer := zerolog.ConsoleWriter{Out: Writer{LogChannel: logChannel}, NoColor: true}
 	log := zerolog.New(writer).With().Timestamp().Logger()
-	zerolog.SetGlobalLevel(zerolog.InfoLevel)
+
+	if config.Verbose {
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	} else {
+		zerolog.SetGlobalLevel(zerolog.WarnLevel)
+	}
 
 	return &log
 }
