@@ -32,6 +32,7 @@ func main() {
 
 	rootCmd.PersistentFlags().StringVar(&config.RPCHost, "rpc-host", "http://localhost:26657", "RPC host URL")
 	rootCmd.PersistentFlags().StringVar(&config.ProviderRPCHost, "provider-rpc-host", "", "Provider chain RPC host URL")
+	rootCmd.PersistentFlags().StringVar(&config.ConsumerChainID, "consumer-chain-id", "", "Consumer chain ID")
 	rootCmd.PersistentFlags().DurationVar(&config.RefreshRate, "refresh-rate", time.Second, "Refresh rate")
 	rootCmd.PersistentFlags().BoolVar(&config.QueryValidators, "query-validators", true, "Whether to query validators from cosmos-sdk")
 	rootCmd.PersistentFlags().DurationVar(&config.ValidatorsRefreshRate, "validators-refresh-rate", time.Minute, "Validators refresh rate")

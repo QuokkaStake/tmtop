@@ -93,6 +93,8 @@ func (s *State) SerializeConsensus() string {
 
 	prevoted := 0
 	precommitted := 0
+	prevotedAgreed := 0
+	precommittedAgreed := 0
 
 	for _, validator := range *s.Validators {
 		if validator.Prevote != VotedNil {
@@ -101,12 +103,26 @@ func (s *State) SerializeConsensus() string {
 		if validator.Precommit != VotedNil {
 			precommitted += 1
 		}
+
+		if validator.Prevote == Voted {
+			prevotedAgreed += 1
+		}
+
+		if validator.Precommit == Voted {
+			precommittedAgreed += 1
+		}
 	}
 
 	sb.WriteString(fmt.Sprintf(
 		" prevoted/precommitted: %d/%d (out of %d)\n",
 		prevoted,
 		precommitted,
+		len(*s.Validators),
+	))
+	sb.WriteString(fmt.Sprintf(
+		" prevoted/precommitted agreed: %d/%d (out of %d)\n",
+		prevotedAgreed,
+		precommittedAgreed,
 		len(*s.Validators),
 	))
 

@@ -1,8 +1,11 @@
 package types
 
 type ChainValidator struct {
-	Moniker string
-	Address string
+	Moniker            string
+	Address            string
+	RawAddress         string
+	AssignedAddress    string
+	RawAssignedAddress string
 }
 
 type ChainValidators []ChainValidator
@@ -12,6 +15,10 @@ func (c ChainValidators) ToMap() map[string]ChainValidator {
 
 	for _, validator := range c {
 		valsMap[validator.Address] = validator
+		if validator.RawAssignedAddress != "" {
+			valsMap[validator.RawAssignedAddress] = validator
+
+		}
 	}
 
 	return valsMap

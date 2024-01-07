@@ -25,7 +25,7 @@ func (w Writer) Write(msg []byte) (int, error) {
 func GetLogger(logChannel chan string) *zerolog.Logger {
 	writer := zerolog.ConsoleWriter{Out: Writer{LogChannel: logChannel}, NoColor: true}
 	log := zerolog.New(writer).With().Timestamp().Logger()
-	zerolog.SetGlobalLevel(zerolog.TraceLevel)
+	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 
 	return &log
 }
