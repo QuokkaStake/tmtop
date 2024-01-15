@@ -77,8 +77,9 @@ func (s *State) SerializeConsensus() string {
 
 	sb.WriteString(fmt.Sprintf(" height=%d round=%d step=%d\n", s.Height, s.Round, s.Step))
 	sb.WriteString(fmt.Sprintf(
-		" block time: %s\n",
+		" block time: %s (%s)\n",
 		utils.ZeroOrPositiveDuration(utils.SerializeDuration(time.Since(s.StartTime))),
+		utils.SerializeTime(s.StartTime),
 	))
 	sb.WriteString(fmt.Sprintf(
 		" prevote consensus (total/agreeing): %.2f / %.2f\n",
@@ -156,11 +157,19 @@ func (s *State) SerializeChainInfo() string {
 
 		if s.BlockTime != 0 {
 			upgradeTime := utils.CalculateTimeTillBlock(s.Height, s.Upgrade.Height, s.BlockTime)
-			sb.WriteString(fmt.Sprintf(" upgrade estimated time: %s\n", utils.SerializeTime(upgradeTime)))
-			sb.WriteString(fmt.Sprintf(
-				" time till upgrade: %s\n",
-				utils.SerializeDuration(time.Until(upgradeTime)),
-			))
+			if s.Upgrade.Height == s.Height {
+				sb.WriteString("upgrade in progress...\n")
+			} else {
+				sb.WriteString(fmt.Sprintf(" upgrade estimated time: %s\n", utils.SerializeTime(upgradeTime)))
+				sb.WriteString(fmt.Sprintf(
+					" time till upgrade: %s\n",
+					utils.SerializeDuration(time.Until(upgradeTime)),
+				))
+				sb.WriteString(fmt.Sprintf(
+					" blocks till upgrade: %d\n",
+					s.Upgrade.Height-s.Height,
+				))
+			}
 		}
 	}
 
