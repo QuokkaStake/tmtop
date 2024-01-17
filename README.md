@@ -21,6 +21,10 @@ See how it looks like (on Sentinel chain, which is cosmos-sdk based chain, and N
 Download the latest release from [the releases page](https://github.com/QuokkaStake/tmtop/releases/). After that, you should unzip it, and you are ready to go:
 
 ```sh
+# auto
+wget $(curl -s https://api.github.com/repos/QuokkaStake/tmtop/releases/latest | grep "browser_download_url.*linux_amd64.tar.gz" | cut -d '"' -f 4) -O tmtop_linux_amd64_latest_release.tar.gz && tar zxvf tmtop_linux_amd64_latest_release.tar.gz && cp tmtop /usr/local/bin/ && tmtop
+
+# manual
 wget <the link from the releases page>
 tar <downloaded file>
 ./tmtop --config <path to config>
