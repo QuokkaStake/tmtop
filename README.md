@@ -80,6 +80,33 @@ All configuration is done via flags, see `./tmtop --help` for the list of flags.
 Additionally, the app itself has a few shortcuts allowing you to control it.
 You can press the [h] button to display the help message, which will show you the shortcuts and when/how to use them.
 
+## Troubleshooting
+
+If you have issues with the app, try pressing the D button to open the debug panel.
+Most likely, the app cannot connect to one of the hosts it needs to connect.
+If there's something unusual, feel free to report a bug on this repository.
+
+Some common errors:
+
+Q: The app displays nothing and is stuck.
+
+![Telegram](https://raw.githubusercontent.com/QuokkaStake/tmtop/main/images/rpc-host-issues.jpg)
+
+A: It's likely the app cannot connect to the RPC host to get data from.
+
+Q: The app displays hashes instead of validators' monikers.
+
+![Telegram](https://raw.githubusercontent.com/QuokkaStake/tmtop/main/images/provider-host-issues.jpg)
+
+A: For sovereign chains, it's likely that the app cannot connect to the provider host,
+or it's not specified (so the app thinks it's a sovereign chain and tries to get validators
+out of the consumer chain). Additionally, this won't work with non-cosmos-sdk chains, like Nomic.
+
+Q: The app displays some monikers as hashes on a consumer chain.
+
+![Telegram](https://raw.githubusercontent.com/QuokkaStake/tmtop/main/images/wrong-chain-id.jpg)
+
+A: Verify you have a correct `--consumer-chain-id` specified.
 
 ## Which networks this is guaranteed to work?
 
