@@ -102,7 +102,7 @@ Q: The app displays hashes instead of validators' monikers.
 
 ![Telegram](https://raw.githubusercontent.com/QuokkaStake/tmtop/main/images/provider-host-issues.jpg)
 
-A: For sovereign chains, it's likely that the app cannot connect to the provider host,
+A: For consumer chains, it's likely that the app cannot connect to the provider host,
 or it's not specified (so the app thinks it's a sovereign chain and tries to get validators
 out of the consumer chain). Additionally, this won't work with non-cosmos-sdk chains, like Nomic.
 
