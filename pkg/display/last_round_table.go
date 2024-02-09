@@ -7,25 +7,25 @@ import (
 	"github.com/rivo/tview"
 )
 
-type TableData struct {
+type LastRoundTableData struct {
 	tview.TableContentReadOnly
 
 	Validators   types.ValidatorsWithInfo
 	ColumnsCount int
 }
 
-func NewTableData(columnsCount int) *TableData {
-	return &TableData{
+func NewLastRoundTableData(columnsCount int) *LastRoundTableData {
+	return &LastRoundTableData{
 		ColumnsCount: columnsCount,
 		Validators:   make(types.ValidatorsWithInfo, 0),
 	}
 }
 
-func (d *TableData) SetColumnsCount(count int) {
+func (d *LastRoundTableData) SetColumnsCount(count int) {
 	d.ColumnsCount = count
 }
 
-func (d *TableData) GetCell(row, column int) *tview.TableCell {
+func (d *LastRoundTableData) GetCell(row, column int) *tview.TableCell {
 	index := row*d.ColumnsCount + column
 	text := ""
 
@@ -42,7 +42,7 @@ func (d *TableData) GetCell(row, column int) *tview.TableCell {
 	return cell
 }
 
-func (d *TableData) GetRowCount() int {
+func (d *LastRoundTableData) GetRowCount() int {
 	if len(d.Validators)%d.ColumnsCount == 0 {
 		return len(d.Validators) / d.ColumnsCount
 	}
@@ -50,10 +50,10 @@ func (d *TableData) GetRowCount() int {
 	return len(d.Validators)/d.ColumnsCount + 1
 }
 
-func (d *TableData) GetColumnCount() int {
+func (d *LastRoundTableData) GetColumnCount() int {
 	return d.ColumnsCount
 }
 
-func (d *TableData) SetValidators(validators types.ValidatorsWithInfo) {
+func (d *LastRoundTableData) SetValidators(validators types.ValidatorsWithInfo) {
 	d.Validators = validators
 }

@@ -11,3 +11,7 @@ You can use the following shortcuts:
 - display or hide this [h[]elp message
 - [p[]ause new updates
 - [q[]uit the app (or Ctrl+C)
+
+You can also press [Tab[] to switch between modes, which are:
+- display last round prevotes/precommits
+- display prevotes/precommits for all rounds

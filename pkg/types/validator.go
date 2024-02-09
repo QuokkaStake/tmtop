@@ -22,6 +22,15 @@ type RoundVote struct {
 	Precommit  Vote
 	IsProposer bool
 }
+
+func (v RoundVote) Serialize() string {
+	return fmt.Sprintf(
+		" %s %s",
+		v.Prevote.Serialize(),
+		v.Precommit.Serialize(),
+	)
+}
+
 type RoundVotes []RoundVote
 
 type ValidatorWithRoundVote struct {
@@ -121,6 +130,23 @@ type ValidatorsWithInfo []ValidatorWithInfo
 type ValidatorWithChainValidator struct {
 	Validator      Validator
 	ChainValidator *ChainValidator
+}
+
+func (v ValidatorWithChainValidator) Serialize() string {
+	name := v.Validator.Address
+	if v.ChainValidator != nil {
+		name = v.ChainValidator.Moniker
+		if v.ChainValidator.AssignedAddress != "" {
+			name = "🔑 " + name
+		}
+	}
+
+	return fmt.Sprintf(
+		" %s %s%% %s ",
+		utils.RightPadAndTrim(strconv.Itoa(v.Validator.Index+1), 3),
+		utils.RightPadAndTrim(fmt.Sprintf("%.2f", v.Validator.VotingPowerPercent), 6),
+		utils.LeftPadAndTrim(name, 25),
+	)
 }
 
 type ValidatorsWithInfoAndAllRoundVotes struct {

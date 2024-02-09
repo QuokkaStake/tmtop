@@ -12,8 +12,11 @@ It can do the following:
 - display chain upgrade info and estimated time
 - work with non cosmos-sdk chains (for instance, Nomic; it won't be able to display the validators' monikers then)
 - work with ICS (fetching the validators list from the provider chain while taking the consensus from the consumer chain)
+- display both the consensus state for the last round (same way as pvtop, for example)
+or for all rounds (this is useful to see which rounds your validator has prevoted/precommitted on)
 
-See how it looks like (on Sentinel chain, which is cosmos-sdk based chain, and Nomic, which uses Tendermint but not cosmos-sdk):
+See how it looks like (on Sentinel chain, which is cosmos-sdk based chain, and Nomic, which uses Tendermint
+but not cosmos-sdk):
 [![asciicast](https://asciinema.org/a/pnmH6j1MHGNdUY8y4eF2Ut21M.svg)](https://asciinema.org/a/pnmH6j1MHGNdUY8y4eF2Ut21M)
 
 ## How can I set it up?
@@ -83,6 +86,10 @@ Additionally, if it's a cosmos-sdk chain, it can also fetch the following data v
 All configuration is done via flags, see `./tmtop --help` for the list of flags.
 Additionally, the app itself has a few shortcuts allowing you to control it.
 You can press the [h] button to display the help message, which will show you the shortcuts and when/how to use them.
+
+This app has 2 modes, use [Tab] button to switch between them:
+- display prevotes/precommits for the last height/round
+- display prevotes/precommits for all rounds for current height
 
 ## Troubleshooting
 
