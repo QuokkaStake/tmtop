@@ -31,6 +31,20 @@ type ValidatorWithRoundVote struct {
 
 type ValidatorsWithRoundVote []ValidatorWithRoundVote
 
+type ValidatorsWithAllRoundsVotes struct {
+	Validators  []Validator
+	RoundsVotes []RoundVotes
+}
+
+func (v Validators) GetTotalVotingPower() *big.Int {
+	sum := big.NewInt(0)
+
+	for _, validator := range v {
+		sum = sum.Add(sum, validator.VotingPower)
+	}
+
+	return sum
+}
 func (v ValidatorsWithRoundVote) GetTotalVotingPower() *big.Int {
 	sum := big.NewInt(0)
 
@@ -104,12 +118,12 @@ func (v ValidatorWithInfo) Serialize() string {
 
 type ValidatorsWithInfo []ValidatorWithInfo
 
-func (v ValidatorsWithInfo) Serialise() []string {
-	serialized := make([]string, len(v))
+type ValidatorWithChainValidator struct {
+	Validator      Validator
+	ChainValidator *ChainValidator
+}
 
-	for index, validator := range v {
-		serialized[index] = validator.Serialize()
-	}
-
-	return serialized
+type ValidatorsWithInfoAndAllRoundVotes struct {
+	Validators  []ValidatorWithChainValidator
+	RoundsVotes []RoundVotes
 }
