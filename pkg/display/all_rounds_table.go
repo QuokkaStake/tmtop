@@ -1,9 +1,10 @@
 package display
 
 import (
-	"fmt"
-	"github.com/gdamore/tcell/v2"
 	"main/pkg/types"
+	"strconv"
+
+	"github.com/gdamore/tcell/v2"
 
 	"github.com/rivo/tview"
 )
@@ -25,7 +26,7 @@ func (d *AllRoundsTableData) GetCell(row, column int) *tview.TableCell {
 	if row == 0 {
 		text := "validator"
 		if column != 0 {
-			text = fmt.Sprintf("%d", column-1)
+			text = strconv.Itoa(column - 1)
 		}
 
 		return tview.
