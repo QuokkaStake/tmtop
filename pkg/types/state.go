@@ -11,7 +11,7 @@ type State struct {
 	Height          int64
 	Round           int64
 	Step            int64
-	Validators      *Validators
+	Validators      *ValidatorsWithRoundVote
 	ChainValidators *ChainValidators
 	ChainInfo       *TendermintStatusResult
 	StartTime       time.Time
@@ -98,18 +98,18 @@ func (s *State) SerializeConsensus() string {
 	precommittedAgreed := 0
 
 	for _, validator := range *s.Validators {
-		if validator.Prevote != VotedNil {
+		if validator.RoundVote.Prevote != VotedNil {
 			prevoted += 1
 		}
-		if validator.Precommit != VotedNil {
+		if validator.RoundVote.Precommit != VotedNil {
 			precommitted += 1
 		}
 
-		if validator.Prevote == Voted {
+		if validator.RoundVote.Prevote == Voted {
 			prevotedAgreed += 1
 		}
 
-		if validator.Precommit == Voted {
+		if validator.RoundVote.Precommit == Voted {
 			precommittedAgreed += 1
 		}
 	}
@@ -234,7 +234,8 @@ func (s *State) GetValidatorsWithInfo() ValidatorsWithInfo {
 
 	for index, validator := range *s.Validators {
 		validators[index] = ValidatorWithInfo{
-			Validator: validator,
+			Validator: validator.Validator,
+			RoundVote: validator.RoundVote,
 		}
 	}
 
@@ -244,7 +245,7 @@ func (s *State) GetValidatorsWithInfo() ValidatorsWithInfo {
 
 	chainValidatorsMap := s.ChainValidators.ToMap()
 	for index, validator := range *s.Validators {
-		if chainValidator, ok := chainValidatorsMap[validator.Address]; ok {
+		if chainValidator, ok := chainValidatorsMap[validator.Validator.Address]; ok {
 			validators[index].ChainValidator = &chainValidator
 		}
 	}

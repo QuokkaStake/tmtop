@@ -10,9 +10,9 @@ func ValidatorsFromTendermintResponse(
 	consensus *ConsensusStateResponse,
 	tendermintValidators []TendermintValidator,
 	round int64,
-) (Validators, error) {
+) (ValidatorsWithRoundVote, error) {
 	lastHeightVoteSet := consensus.Result.RoundState.HeightVoteSet[round]
-	validators := make(Validators, len(lastHeightVoteSet.Prevotes))
+	validators := make(ValidatorsWithRoundVote, len(lastHeightVoteSet.Prevotes))
 
 	for index, prevote := range lastHeightVoteSet.Prevotes {
 		precommit := lastHeightVoteSet.Precommits[index]
@@ -24,25 +24,30 @@ func ValidatorsFromTendermintResponse(
 			return nil, fmt.Errorf("error setting string")
 		}
 
-		validators[index] = Validator{
-			Address:     validator.Address,
-			Precommit:   VoteFromString(precommit),
-			Prevote:     VoteFromString(prevote),
-			VotingPower: vp,
-			IsProposer:  validator.Address == consensus.Result.RoundState.Proposer.Address,
+		validators[index] = ValidatorWithRoundVote{
+			Validator: Validator{
+				Address:     validator.Address,
+				VotingPower: vp,
+			},
+			RoundVote: RoundVote{
+				Address:    validator.Address,
+				Precommit:  VoteFromString(precommit),
+				Prevote:    VoteFromString(prevote),
+				IsProposer: validator.Address == consensus.Result.RoundState.Proposer.Address,
+			},
 		}
 	}
 
 	totalVP := validators.GetTotalVotingPower()
 
 	for index, validator := range validators {
-		validators[index].Index = index
+		validators[index].Validator.Index = index
 
-		votingPowerPercent := big.NewFloat(0).SetInt(validator.VotingPower)
+		votingPowerPercent := big.NewFloat(0).SetInt(validator.Validator.VotingPower)
 		votingPowerPercent = votingPowerPercent.Quo(votingPowerPercent, big.NewFloat(0).SetInt(totalVP))
 		votingPowerPercent = votingPowerPercent.Mul(votingPowerPercent, big.NewFloat(100))
 
-		validators[index].VotingPowerPercent = votingPowerPercent
+		validators[index].Validator.VotingPowerPercent = votingPowerPercent
 	}
 
 	return validators, nil

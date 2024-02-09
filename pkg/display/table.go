@@ -35,7 +35,7 @@ func (d *TableData) GetCell(row, column int) *tview.TableCell {
 
 	cell := tview.NewTableCell(text)
 
-	if index < len(d.Validators) && d.Validators[index].Validator.IsProposer {
+	if index < len(d.Validators) && d.Validators[index].RoundVote.IsProposer {
 		cell.SetBackgroundColor(tcell.ColorForestGreen)
 	}
 
