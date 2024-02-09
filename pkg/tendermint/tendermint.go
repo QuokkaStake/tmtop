@@ -2,6 +2,7 @@ package tendermint
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	configPkg "main/pkg/config"
 	"net/http"
@@ -47,7 +48,7 @@ func (rpc *RPC) GetValidators() ([]types.TendermintValidator, error) {
 		}
 
 		if response == nil || response.Result == nil || response.Result.Total == "" {
-			return nil, fmt.Errorf("malformed response from node")
+			return nil, errors.New("malformed response from node")
 		}
 
 		total, err := strconv.ParseInt(response.Result.Total, 10, 64)

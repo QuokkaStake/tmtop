@@ -12,12 +12,38 @@ type Validator struct {
 	Address            string
 	VotingPower        *big.Int
 	VotingPowerPercent *big.Float
-	Prevote            Vote
-	Precommit          Vote
-	IsProposer         bool
 }
 
 type Validators []Validator
+
+type RoundVote struct {
+	Address    string
+	Prevote    Vote
+	Precommit  Vote
+	IsProposer bool
+}
+
+func (v RoundVote) Serialize() string {
+	return fmt.Sprintf(
+		" %s %s",
+		v.Prevote.Serialize(),
+		v.Precommit.Serialize(),
+	)
+}
+
+type RoundVotes []RoundVote
+
+type ValidatorWithRoundVote struct {
+	Validator Validator
+	RoundVote RoundVote
+}
+
+type ValidatorsWithRoundVote []ValidatorWithRoundVote
+
+type ValidatorsWithAllRoundsVotes struct {
+	Validators  []Validator
+	RoundsVotes []RoundVotes
+}
 
 func (v Validators) GetTotalVotingPower() *big.Int {
 	sum := big.NewInt(0)
@@ -28,15 +54,24 @@ func (v Validators) GetTotalVotingPower() *big.Int {
 
 	return sum
 }
+func (v ValidatorsWithRoundVote) GetTotalVotingPower() *big.Int {
+	sum := big.NewInt(0)
 
-func (v Validators) GetTotalVotingPowerPrevotedPercent(countDisagreeing bool) *big.Float {
+	for _, validator := range v {
+		sum = sum.Add(sum, validator.Validator.VotingPower)
+	}
+
+	return sum
+}
+
+func (v ValidatorsWithRoundVote) GetTotalVotingPowerPrevotedPercent(countDisagreeing bool) *big.Float {
 	prevoted := big.NewInt(0)
 	totalVP := big.NewInt(0)
 
 	for _, validator := range v {
-		totalVP = totalVP.Add(totalVP, validator.VotingPower)
-		if validator.Prevote == Voted || (countDisagreeing && validator.Prevote == VotedZero) {
-			prevoted = prevoted.Add(prevoted, validator.VotingPower)
+		totalVP = totalVP.Add(totalVP, validator.Validator.VotingPower)
+		if validator.RoundVote.Prevote == Voted || (countDisagreeing && validator.RoundVote.Prevote == VotedZero) {
+			prevoted = prevoted.Add(prevoted, validator.Validator.VotingPower)
 		}
 	}
 
@@ -47,14 +82,14 @@ func (v Validators) GetTotalVotingPowerPrevotedPercent(countDisagreeing bool) *b
 	return votingPowerPercent
 }
 
-func (v Validators) GetTotalVotingPowerPrecommittedPercent(countDisagreeing bool) *big.Float {
+func (v ValidatorsWithRoundVote) GetTotalVotingPowerPrecommittedPercent(countDisagreeing bool) *big.Float {
 	precommitted := big.NewInt(0)
 	totalVP := big.NewInt(0)
 
 	for _, validator := range v {
-		totalVP = totalVP.Add(totalVP, validator.VotingPower)
-		if validator.Precommit == Voted || (countDisagreeing && validator.Precommit == VotedZero) {
-			precommitted = precommitted.Add(precommitted, validator.VotingPower)
+		totalVP = totalVP.Add(totalVP, validator.Validator.VotingPower)
+		if validator.RoundVote.Precommit == Voted || (countDisagreeing && validator.RoundVote.Precommit == VotedZero) {
+			precommitted = precommitted.Add(precommitted, validator.Validator.VotingPower)
 		}
 	}
 
@@ -67,6 +102,7 @@ func (v Validators) GetTotalVotingPowerPrecommittedPercent(countDisagreeing bool
 
 type ValidatorWithInfo struct {
 	Validator      Validator
+	RoundVote      RoundVote
 	ChainValidator *ChainValidator
 }
 
@@ -81,8 +117,8 @@ func (v ValidatorWithInfo) Serialize() string {
 
 	return fmt.Sprintf(
 		" %s %s %s %s%% %s ",
-		v.Validator.Prevote.Serialize(),
-		v.Validator.Precommit.Serialize(),
+		v.RoundVote.Prevote.Serialize(),
+		v.RoundVote.Precommit.Serialize(),
 		utils.RightPadAndTrim(strconv.Itoa(v.Validator.Index+1), 3),
 		utils.RightPadAndTrim(fmt.Sprintf("%.2f", v.Validator.VotingPowerPercent), 6),
 		utils.LeftPadAndTrim(name, 25),
@@ -91,12 +127,29 @@ func (v ValidatorWithInfo) Serialize() string {
 
 type ValidatorsWithInfo []ValidatorWithInfo
 
-func (v ValidatorsWithInfo) Serialise() []string {
-	serialized := make([]string, len(v))
+type ValidatorWithChainValidator struct {
+	Validator      Validator
+	ChainValidator *ChainValidator
+}
 
-	for index, validator := range v {
-		serialized[index] = validator.Serialize()
+func (v ValidatorWithChainValidator) Serialize() string {
+	name := v.Validator.Address
+	if v.ChainValidator != nil {
+		name = v.ChainValidator.Moniker
+		if v.ChainValidator.AssignedAddress != "" {
+			name = "🔑 " + name
+		}
 	}
 
-	return serialized
+	return fmt.Sprintf(
+		" %s %s%% %s ",
+		utils.RightPadAndTrim(strconv.Itoa(v.Validator.Index+1), 3),
+		utils.RightPadAndTrim(fmt.Sprintf("%.2f", v.Validator.VotingPowerPercent), 6),
+		utils.LeftPadAndTrim(name, 25),
+	)
+}
+
+type ValidatorsWithInfoAndAllRoundVotes struct {
+	Validators  []ValidatorWithChainValidator
+	RoundsVotes []RoundVotes
 }

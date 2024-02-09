@@ -8,15 +8,16 @@ import (
 )
 
 type State struct {
-	Height          int64
-	Round           int64
-	Step            int64
-	Validators      *Validators
-	ChainValidators *ChainValidators
-	ChainInfo       *TendermintStatusResult
-	StartTime       time.Time
-	Upgrade         *Upgrade
-	BlockTime       time.Duration
+	Height                       int64
+	Round                        int64
+	Step                         int64
+	Validators                   *ValidatorsWithRoundVote
+	ValidatorsWithAllRoundsVotes *ValidatorsWithAllRoundsVotes
+	ChainValidators              *ChainValidators
+	ChainInfo                    *TendermintStatusResult
+	StartTime                    time.Time
+	Upgrade                      *Upgrade
+	BlockTime                    time.Duration
 }
 
 func NewState() *State {
@@ -42,12 +43,19 @@ func (s *State) SetTendermintResponse(
 	s.Step = utils.MustParseInt64(hrsSplit[2])
 	s.StartTime = consensus.Result.RoundState.StartTime
 
-	validators, err := ValidatorsFromTendermintResponse(consensus, tendermintValidators, s.Round)
+	validators, err := ValidatorsWithLatestRoundFromTendermintResponse(consensus, tendermintValidators, s.Round)
 	if err != nil {
 		return err
 	}
 
 	s.Validators = &validators
+
+	validatorsWithAllRounds, err := ValidatorsWithAllRoundsFromTendermintResponse(consensus, tendermintValidators)
+	if err != nil {
+		return err
+	}
+
+	s.ValidatorsWithAllRoundsVotes = &validatorsWithAllRounds
 
 	return nil
 }
@@ -98,18 +106,18 @@ func (s *State) SerializeConsensus() string {
 	precommittedAgreed := 0
 
 	for _, validator := range *s.Validators {
-		if validator.Prevote != VotedNil {
+		if validator.RoundVote.Prevote != VotedNil {
 			prevoted += 1
 		}
-		if validator.Precommit != VotedNil {
+		if validator.RoundVote.Precommit != VotedNil {
 			precommitted += 1
 		}
 
-		if validator.Prevote == Voted {
+		if validator.RoundVote.Prevote == Voted {
 			prevotedAgreed += 1
 		}
 
-		if validator.Precommit == Voted {
+		if validator.RoundVote.Precommit == Voted {
 			precommittedAgreed += 1
 		}
 	}
@@ -234,7 +242,8 @@ func (s *State) GetValidatorsWithInfo() ValidatorsWithInfo {
 
 	for index, validator := range *s.Validators {
 		validators[index] = ValidatorWithInfo{
-			Validator: validator,
+			Validator: validator.Validator,
+			RoundVote: validator.RoundVote,
 		}
 	}
 
@@ -244,10 +253,43 @@ func (s *State) GetValidatorsWithInfo() ValidatorsWithInfo {
 
 	chainValidatorsMap := s.ChainValidators.ToMap()
 	for index, validator := range *s.Validators {
-		if chainValidator, ok := chainValidatorsMap[validator.Address]; ok {
+		if chainValidator, ok := chainValidatorsMap[validator.Validator.Address]; ok {
 			validators[index].ChainValidator = &chainValidator
 		}
 	}
 
 	return validators
+}
+
+func (s *State) GetValidatorsWithInfoAndAllRoundVotes() ValidatorsWithInfoAndAllRoundVotes {
+	if s.ValidatorsWithAllRoundsVotes == nil {
+		return ValidatorsWithInfoAndAllRoundVotes{}
+	}
+
+	validators := make([]ValidatorWithChainValidator, len(s.ValidatorsWithAllRoundsVotes.Validators))
+
+	for index, validator := range s.ValidatorsWithAllRoundsVotes.Validators {
+		validators[index] = ValidatorWithChainValidator{
+			Validator: validator,
+		}
+	}
+
+	if s.ChainValidators == nil {
+		return ValidatorsWithInfoAndAllRoundVotes{
+			Validators:  validators,
+			RoundsVotes: s.ValidatorsWithAllRoundsVotes.RoundsVotes,
+		}
+	}
+
+	chainValidatorsMap := s.ChainValidators.ToMap()
+	for index, validator := range s.ValidatorsWithAllRoundsVotes.Validators {
+		if chainValidator, ok := chainValidatorsMap[validator.Address]; ok {
+			validators[index].ChainValidator = &chainValidator
+		}
+	}
+
+	return ValidatorsWithInfoAndAllRoundVotes{
+		Validators:  validators,
+		RoundsVotes: s.ValidatorsWithAllRoundsVotes.RoundsVotes,
+	}
 }

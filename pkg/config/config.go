@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"slices"
 	"time"
@@ -37,7 +38,7 @@ func (c Config) Validate() error {
 	}
 
 	if c.IsConsumer() && c.ConsumerChainID == "" {
-		return fmt.Errorf("chain is consumer, but consumer-chain-id is not set")
+		return errors.New("chain is consumer, but consumer-chain-id is not set")
 	}
 
 	return nil

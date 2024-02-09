@@ -12,9 +12,15 @@ import (
 )
 
 const (
+	ModeLastRound = iota
+	ModeAllRounds = iota
+)
+
+const (
 	DefaultColumnsCount = 3
 	RowsAmount          = 10
 	DebugBlockHeight    = 2
+	DefaultMode         = ModeLastRound
 )
 
 type Wrapper struct {
@@ -22,8 +28,10 @@ type Wrapper struct {
 	ChainInfoTextView     *tview.TextView
 	ProgressTextView      *tview.TextView
 	DebugTextView         *tview.TextView
-	Table                 *tview.Table
-	TableData             *TableData
+	LastRoundTable        *tview.Table
+	LastRoundTableData    *LastRoundTableData
+	AllRoundsTable        *tview.Table
+	AllRoundsTableData    *AllRoundsTableData
 	Grid                  *tview.Grid
 	Pages                 *tview.Pages
 	App                   *tview.Application
@@ -31,6 +39,7 @@ type Wrapper struct {
 
 	InfoBlockWidth int
 	ColumnsCount   int
+	Mode           int
 
 	DebugEnabled bool
 
@@ -43,15 +52,21 @@ type Wrapper struct {
 }
 
 func NewWrapper(logger zerolog.Logger, pauseChannel chan bool, appVersion string) *Wrapper {
-	tableData := NewTableData(DefaultColumnsCount)
+	lastRoundTableData := NewLastRoundTableData(DefaultColumnsCount)
+	allRoundsTableData := NewAllRoundsTableData()
 
 	helpTextBytes, _ := static.TemplatesFs.ReadFile("help.txt")
 	helpText := strings.ReplaceAll(string(helpTextBytes), "{{ Version }}", appVersion)
 
-	table := tview.NewTable().
+	lastRoundTable := tview.NewTable().
 		SetBorders(false).
 		SetSelectable(false, false).
-		SetContent(tableData)
+		SetContent(lastRoundTableData)
+
+	allRoundsTable := tview.NewTable().
+		SetBorders(false).
+		SetSelectable(false, false).
+		SetContent(allRoundsTableData)
 
 	consensusInfoTextView := tview.NewTextView().
 		SetDynamicColors(true).
@@ -78,15 +93,17 @@ func NewWrapper(logger zerolog.Logger, pauseChannel chan bool, appVersion string
 
 	pages := tview.NewPages().AddPage("grid", grid, true, true)
 
-	app := tview.NewApplication().SetRoot(pages, true).SetFocus(table)
+	app := tview.NewApplication().SetRoot(pages, true).SetFocus(lastRoundTable)
 
 	return &Wrapper{
 		ChainInfoTextView:     chainInfoTextView,
 		ConsensusInfoTextView: consensusInfoTextView,
 		ProgressTextView:      progressTextView,
 		DebugTextView:         debugTextView,
-		Table:                 table,
-		TableData:             tableData,
+		LastRoundTable:        lastRoundTable,
+		LastRoundTableData:    lastRoundTableData,
+		AllRoundsTable:        allRoundsTable,
+		AllRoundsTableData:    allRoundsTableData,
 		HelpModal:             helpModal,
 		Grid:                  grid,
 		Pages:                 pages,
@@ -95,6 +112,7 @@ func NewWrapper(logger zerolog.Logger, pauseChannel chan bool, appVersion string
 		DebugEnabled:          false,
 		InfoBlockWidth:        2,
 		ColumnsCount:          DefaultColumnsCount,
+		Mode:                  DefaultMode,
 		PauseChannel:          pauseChannel,
 		IsPaused:              false,
 		IsHelpDisplayed:       false,
@@ -136,11 +154,16 @@ func (w *Wrapper) Start() {
 			w.PauseChannel <- w.IsPaused
 		}
 
+		if event.Key() == tcell.KeyTAB {
+			w.ChangeMode()
+		}
+
 		return event
 	})
 
 	w.Grid.SetBackgroundColor(tcell.ColorDefault)
-	w.Table.SetBackgroundColor(tcell.ColorDefault)
+	w.LastRoundTable.SetBackgroundColor(tcell.ColorDefault)
+	w.AllRoundsTable.SetBackgroundColor(tcell.ColorDefault)
 	w.ChainInfoTextView.SetBackgroundColor(tcell.ColorDefault)
 	w.ConsensusInfoTextView.SetBackgroundColor(tcell.ColorDefault)
 	w.ProgressTextView.SetBackgroundColor(tcell.ColorDefault)
@@ -175,7 +198,8 @@ func (w *Wrapper) ToggleHelp() {
 }
 
 func (w *Wrapper) SetState(state *types.State) {
-	w.TableData.SetValidators(state.GetValidatorsWithInfo())
+	w.LastRoundTableData.SetValidators(state.GetValidatorsWithInfo())
+	w.AllRoundsTableData.SetValidators(state.GetValidatorsWithInfoAndAllRoundVotes())
 
 	w.ConsensusInfoTextView.Clear()
 	w.ChainInfoTextView.Clear()
@@ -213,16 +237,35 @@ func (w *Wrapper) ChangeColumnsCount(increase bool) {
 		w.ColumnsCount--
 	}
 
-	w.TableData.SetColumnsCount(w.ColumnsCount)
+	w.LastRoundTableData.SetColumnsCount(w.ColumnsCount)
+
+	w.Redraw()
+}
+
+func (w *Wrapper) ChangeMode() {
+	switch w.Mode {
+	case ModeAllRounds:
+		w.Mode = ModeLastRound
+	case ModeLastRound:
+		w.Mode = ModeAllRounds
+	default:
+		w.Mode = ModeLastRound
+	}
 
 	w.Redraw()
 }
 
 func (w *Wrapper) Redraw() {
+	table := w.LastRoundTable
+	if w.Mode == ModeAllRounds {
+		table = w.AllRoundsTable
+	}
+
 	w.Grid.RemoveItem(w.ConsensusInfoTextView)
 	w.Grid.RemoveItem(w.ChainInfoTextView)
 	w.Grid.RemoveItem(w.ProgressTextView)
-	w.Grid.RemoveItem(w.Table)
+	w.Grid.RemoveItem(w.LastRoundTable)
+	w.Grid.RemoveItem(w.AllRoundsTable)
 	w.Grid.RemoveItem(w.DebugTextView)
 
 	w.Grid.AddItem(w.ConsensusInfoTextView, 0, 0, w.InfoBlockWidth, 2, 1, 1, false)
@@ -231,7 +274,7 @@ func (w *Wrapper) Redraw() {
 
 	if w.DebugEnabled {
 		w.Grid.AddItem(
-			w.Table,
+			table,
 			w.InfoBlockWidth,
 			0,
 			RowsAmount-w.InfoBlockWidth-DebugBlockHeight,
@@ -252,7 +295,7 @@ func (w *Wrapper) Redraw() {
 		)
 	} else {
 		w.Grid.AddItem(
-			w.Table,
+			table,
 			w.InfoBlockWidth,
 			0,
 			RowsAmount-w.InfoBlockWidth,
@@ -268,4 +311,6 @@ func (w *Wrapper) Redraw() {
 	} else {
 		w.Pages.RemovePage("modal")
 	}
+
+	w.App.SetFocus(table)
 }
