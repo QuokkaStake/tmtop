@@ -1,7 +1,7 @@
 package types
 
 import (
-	"fmt"
+	"errors"
 	"math/big"
 	"strings"
 )
@@ -21,7 +21,7 @@ func ValidatorsWithLatestRoundFromTendermintResponse(
 		vp := new(big.Int)
 		vp, ok := vp.SetString(validator.VotingPower, 10)
 		if !ok {
-			return nil, fmt.Errorf("error setting string")
+			return nil, errors.New("error setting string")
 		}
 
 		validators[index] = ValidatorWithRoundVote{
@@ -62,7 +62,7 @@ func ValidatorsWithAllRoundsFromTendermintResponse(
 		vp := new(big.Int)
 		vp, ok := vp.SetString(validator.VotingPower, 10)
 		if !ok {
-			return ValidatorsWithAllRoundsVotes{}, fmt.Errorf("error setting string")
+			return ValidatorsWithAllRoundsVotes{}, errors.New("error setting string")
 		}
 
 		validators[index] = Validator{

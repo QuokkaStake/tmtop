@@ -2,6 +2,7 @@ package fetcher
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	configPkg "main/pkg/config"
 	"main/pkg/types"
@@ -185,7 +186,7 @@ func (f *CosmosDataFetcher) GetUpgradePlan() (*types.Upgrade, error) {
 	}
 
 	if response.Plan == nil {
-		return nil, fmt.Errorf("upgrade plan is not present")
+		return nil, errors.New("upgrade plan is not present")
 	}
 
 	return &types.Upgrade{
