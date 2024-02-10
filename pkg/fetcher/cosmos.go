@@ -1,15 +1,13 @@
 package fetcher
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	configPkg "main/pkg/config"
+	"main/pkg/http"
 	"main/pkg/types"
-	"net/http"
 	"net/url"
 	"sync"
-	"time"
 
 	sdkTypes "github.com/cosmos/cosmos-sdk/types"
 
@@ -25,8 +23,10 @@ import (
 )
 
 type CosmosDataFetcher struct {
-	Config configPkg.Config
-	Logger zerolog.Logger
+	Config         configPkg.Config
+	Logger         zerolog.Logger
+	Client         *http.Client
+	ProviderClient *http.Client
 
 	Registry   codecTypes.InterfaceRegistry
 	ParseCodec *codec.ProtoCodec
@@ -38,11 +38,21 @@ func NewCosmosDataFetcher(config configPkg.Config, logger zerolog.Logger) *Cosmo
 	parseCodec := codec.NewProtoCodec(interfaceRegistry)
 
 	return &CosmosDataFetcher{
-		Config:     config,
-		Logger:     logger.With().Str("component", "cosmos_data_fetcher").Logger(),
-		Registry:   interfaceRegistry,
-		ParseCodec: parseCodec,
+		Config:         config,
+		Logger:         logger.With().Str("component", "cosmos_data_fetcher").Logger(),
+		ProviderClient: http.NewClient(logger, "cosmos_data_fetcher", config.ProviderRPCHost),
+		Client:         http.NewClient(logger, "cosmos_data_fetcher", config.RPCHost),
+		Registry:       interfaceRegistry,
+		ParseCodec:     parseCodec,
 	}
+}
+
+func (f *CosmosDataFetcher) GetProviderOrConsumerClient() *http.Client {
+	if f.Config.ProviderRPCHost != "" {
+		return f.ProviderClient
+	}
+
+	return f.Client
 }
 
 func (f *CosmosDataFetcher) GetValidatorAssignedConsumerKey(
@@ -58,7 +68,7 @@ func (f *CosmosDataFetcher) GetValidatorAssignedConsumerKey(
 		"/interchain_security.ccv.provider.v1.Query/QueryValidatorConsumerAddr",
 		&query,
 		&response,
-		f.Config.ProviderRPCHost,
+		f.ProviderClient,
 	); err != nil {
 		return nil, err
 	}
@@ -70,7 +80,7 @@ func (f *CosmosDataFetcher) AbciQuery(
 	method string,
 	message codec.ProtoMarshaler,
 	output codec.ProtoMarshaler,
-	host string,
+	client *http.Client,
 ) error {
 	dataBytes, err := message.Marshal()
 	if err != nil {
@@ -85,7 +95,7 @@ func (f *CosmosDataFetcher) AbciQuery(
 	)
 
 	var response types.AbciQueryResponse
-	if err := f.Get(queryURL, &response, host); err != nil {
+	if err := client.Get(queryURL, &response); err != nil {
 		return err
 	}
 
@@ -112,7 +122,7 @@ func (f *CosmosDataFetcher) GetValidators() (*types.ChainValidators, error) {
 		"/cosmos.staking.v1beta1.Query/Validators",
 		&query,
 		&validatorsResponse,
-		f.Config.GetProviderOrConsumerHost(),
+		f.GetProviderOrConsumerClient(),
 	); err != nil {
 		return nil, err
 	}
@@ -180,7 +190,7 @@ func (f *CosmosDataFetcher) GetUpgradePlan() (*types.Upgrade, error) {
 		"/cosmos.upgrade.v1beta1.Query/CurrentPlan",
 		&query,
 		&response,
-		f.Config.RPCHost,
+		f.Client,
 	); err != nil {
 		return nil, err
 	}
@@ -193,31 +203,4 @@ func (f *CosmosDataFetcher) GetUpgradePlan() (*types.Upgrade, error) {
 		Name:   response.Plan.Name,
 		Height: response.Plan.Height,
 	}, nil
-}
-
-func (f *CosmosDataFetcher) Get(relativeURL string, target interface{}, host string) error {
-	client := &http.Client{Timeout: 300 * time.Second}
-	start := time.Now()
-
-	fullURL := fmt.Sprintf("%s%s", host, relativeURL)
-
-	req, err := http.NewRequest(http.MethodGet, fullURL, nil)
-	if err != nil {
-		return err
-	}
-
-	req.Header.Set("User-Agent", "tmtop")
-
-	f.Logger.Debug().Str("url", fullURL).Msg("Doing a query...")
-
-	res, err := client.Do(req)
-	if err != nil {
-		f.Logger.Warn().Str("url", fullURL).Err(err).Msg("Query failed")
-		return err
-	}
-	defer res.Body.Close()
-
-	f.Logger.Debug().Str("url", fullURL).Dur("duration", time.Since(start)).Msg("Query is finished")
-
-	return json.NewDecoder(res.Body).Decode(target)
 }

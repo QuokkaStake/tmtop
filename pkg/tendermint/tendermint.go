@@ -1,11 +1,10 @@
 package tendermint
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	configPkg "main/pkg/config"
-	"net/http"
+	"main/pkg/http"
 	"strconv"
 	"time"
 
@@ -17,19 +16,21 @@ import (
 type RPC struct {
 	Config     configPkg.Config
 	Logger     zerolog.Logger
+	Client     *http.Client
 	LogChannel chan string
 }
 
 func NewRPC(config configPkg.Config, logger zerolog.Logger) *RPC {
 	return &RPC{
 		Config: config,
-		Logger: logger.With().Str("component", "rpc").Logger(),
+		Logger: logger.With().Str("component", "tendermint_rpc").Logger(),
+		Client: http.NewClient(logger, "tendermint_rpc", config.RPCHost),
 	}
 }
 
 func (rpc *RPC) GetConsensusState() (*types.ConsensusStateResponse, error) {
 	var response types.ConsensusStateResponse
-	if err := rpc.Get("/consensus_state", &response); err != nil {
+	if err := rpc.Client.Get("/consensus_state", &response); err != nil {
 		return nil, err
 	}
 
@@ -69,7 +70,7 @@ func (rpc *RPC) GetValidators() ([]types.TendermintValidator, error) {
 
 func (rpc *RPC) GetStatus() (*types.TendermintStatusResponse, error) {
 	var response types.TendermintStatusResponse
-	if err := rpc.Get("/status", &response); err != nil {
+	if err := rpc.Client.Get("/status", &response); err != nil {
 		return nil, err
 	}
 
@@ -78,7 +79,7 @@ func (rpc *RPC) GetStatus() (*types.TendermintStatusResponse, error) {
 
 func (rpc *RPC) GetValidatorsAtPage(page int) (*types.ValidatorsResponse, error) {
 	var response types.ValidatorsResponse
-	if err := rpc.Get(fmt.Sprintf("/validators?page=%d&per_page=100", page), &response); err != nil {
+	if err := rpc.Client.Get(fmt.Sprintf("/validators?page=%d&per_page=100", page), &response); err != nil {
 		return nil, err
 	}
 
@@ -92,7 +93,7 @@ func (rpc *RPC) Block(height int64) (types.TendermintBlockResponse, error) {
 	}
 
 	res := types.TendermintBlockResponse{}
-	err := rpc.Get(blockURL, &res)
+	err := rpc.Client.Get(blockURL, &res)
 	return res, err
 }
 
@@ -125,31 +126,4 @@ func (rpc *RPC) GetBlockTime() (time.Duration, error) {
 
 	duration := time.Duration(int64(blockTime * float64(time.Second)))
 	return duration, nil
-}
-
-func (rpc *RPC) Get(relativeURL string, target interface{}) error {
-	client := &http.Client{Timeout: 300 * time.Second}
-	start := time.Now()
-
-	url := fmt.Sprintf("%s%s", rpc.Config.RPCHost, relativeURL)
-
-	req, err := http.NewRequest(http.MethodGet, url, nil)
-	if err != nil {
-		return err
-	}
-
-	req.Header.Set("User-Agent", "tmtop")
-
-	rpc.Logger.Debug().Str("url", url).Msg("Doing a query...")
-
-	res, err := client.Do(req)
-	if err != nil {
-		rpc.Logger.Warn().Str("url", url).Err(err).Msg("Query failed")
-		return err
-	}
-	defer res.Body.Close()
-
-	rpc.Logger.Debug().Str("url", url).Dur("duration", time.Since(start)).Msg("Query is finished")
-
-	return json.NewDecoder(res.Body).Decode(target)
 }
