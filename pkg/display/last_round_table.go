@@ -10,14 +10,16 @@ import (
 type LastRoundTableData struct {
 	tview.TableContentReadOnly
 
-	Validators   types.ValidatorsWithInfo
-	ColumnsCount int
+	Validators    types.ValidatorsWithInfo
+	ColumnsCount  int
+	DisableEmojis bool
 }
 
-func NewLastRoundTableData(columnsCount int) *LastRoundTableData {
+func NewLastRoundTableData(columnsCount int, disableEmojis bool) *LastRoundTableData {
 	return &LastRoundTableData{
-		ColumnsCount: columnsCount,
-		Validators:   make(types.ValidatorsWithInfo, 0),
+		ColumnsCount:  columnsCount,
+		Validators:    make(types.ValidatorsWithInfo, 0),
+		DisableEmojis: disableEmojis,
 	}
 }
 
@@ -30,7 +32,7 @@ func (d *LastRoundTableData) GetCell(row, column int) *tview.TableCell {
 	text := ""
 
 	if index < len(d.Validators) {
-		text = d.Validators[index].Serialize()
+		text = d.Validators[index].Serialize(d.DisableEmojis)
 	}
 
 	cell := tview.NewTableCell(text)

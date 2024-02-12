@@ -18,6 +18,7 @@ type Config struct {
 	BlockTimeRefreshRate  time.Duration
 	ChainType             string
 	Verbose               bool
+	DisableEmojis         bool
 }
 
 func (c Config) GetProviderOrConsumerHost() string {
