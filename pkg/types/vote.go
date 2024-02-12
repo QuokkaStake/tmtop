@@ -1,7 +1,5 @@
 package types
 
-import loggerPkg "main/pkg/logger"
-
 type Vote int
 
 const (
@@ -10,7 +8,20 @@ const (
 	VotedZero
 )
 
-func (v Vote) Serialize() string {
+func (v Vote) Serialize(disableEmojis bool) string {
+	if disableEmojis {
+		switch v {
+		case Voted:
+			return "[X[]"
+		case VotedZero:
+			return "[0[]"
+		case VotedNil:
+			return "[ []"
+		default:
+			return ""
+		}
+	}
+
 	switch v {
 	case Voted:
 		return "✅"
@@ -18,8 +29,7 @@ func (v Vote) Serialize() string {
 		return "🤷"
 	case VotedNil:
 		return "❌"
+	default:
+		return ""
 	}
-
-	loggerPkg.GetDefaultLogger().Fatal().Str("value", string(rune(v))).Msg("Error parsing vote")
-	return ""
 }

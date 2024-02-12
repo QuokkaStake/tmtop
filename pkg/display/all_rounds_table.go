@@ -12,12 +12,14 @@ import (
 type AllRoundsTableData struct {
 	tview.TableContentReadOnly
 
-	Validators types.ValidatorsWithInfoAndAllRoundVotes
+	Validators    types.ValidatorsWithInfoAndAllRoundVotes
+	DisableEmojis bool
 }
 
-func NewAllRoundsTableData() *AllRoundsTableData {
+func NewAllRoundsTableData(disableEmojis bool) *AllRoundsTableData {
 	return &AllRoundsTableData{
-		Validators: types.ValidatorsWithInfoAndAllRoundVotes{},
+		Validators:    types.ValidatorsWithInfoAndAllRoundVotes{},
+		DisableEmojis: disableEmojis,
 	}
 }
 
@@ -44,7 +46,7 @@ func (d *AllRoundsTableData) GetCell(row, column int) *tview.TableCell {
 
 	roundVotes := d.Validators.RoundsVotes[column-1]
 	roundVote := roundVotes[row-1]
-	text := roundVote.Serialize()
+	text := roundVote.Serialize(d.DisableEmojis)
 
 	cell := tview.NewTableCell(text)
 

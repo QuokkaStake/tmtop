@@ -38,6 +38,7 @@ func main() {
 	rootCmd.PersistentFlags().StringVar(&config.ConsumerChainID, "consumer-chain-id", "", "Consumer chain ID")
 	rootCmd.PersistentFlags().DurationVar(&config.RefreshRate, "refresh-rate", time.Second, "Refresh rate")
 	rootCmd.PersistentFlags().BoolVar(&config.Verbose, "verbose", false, "Display more debug logs")
+	rootCmd.PersistentFlags().BoolVar(&config.DisableEmojis, "disable-emojis", false, "Disable emojis in output")
 	rootCmd.PersistentFlags().StringVar(&config.ChainType, "chain-type", "cosmos", "Chain type. Allowed values are: 'cosmos', 'tendermint'")
 	rootCmd.PersistentFlags().DurationVar(&config.ValidatorsRefreshRate, "validators-refresh-rate", time.Minute, "Validators refresh rate")
 	rootCmd.PersistentFlags().DurationVar(&config.ChainInfoRefreshRate, "chain-info-refresh-rate", 5*time.Minute, "Chain info refresh rate")

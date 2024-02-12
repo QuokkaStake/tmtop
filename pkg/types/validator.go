@@ -23,11 +23,11 @@ type RoundVote struct {
 	IsProposer bool
 }
 
-func (v RoundVote) Serialize() string {
+func (v RoundVote) Serialize(disableEmojis bool) string {
 	return fmt.Sprintf(
 		" %s %s",
-		v.Prevote.Serialize(),
-		v.Precommit.Serialize(),
+		v.Prevote.Serialize(disableEmojis),
+		v.Precommit.Serialize(disableEmojis),
 	)
 }
 
@@ -106,19 +106,23 @@ type ValidatorWithInfo struct {
 	ChainValidator *ChainValidator
 }
 
-func (v ValidatorWithInfo) Serialize() string {
+func (v ValidatorWithInfo) Serialize(disableEmojis bool) string {
 	name := v.Validator.Address
 	if v.ChainValidator != nil {
 		name = v.ChainValidator.Moniker
 		if v.ChainValidator.AssignedAddress != "" {
-			name = "🔑 " + name
+			emoji := "🔑"
+			if disableEmojis {
+				emoji = "[k[]"
+			}
+			name = emoji + " " + name
 		}
 	}
 
 	return fmt.Sprintf(
 		" %s %s %s %s%% %s ",
-		v.RoundVote.Prevote.Serialize(),
-		v.RoundVote.Precommit.Serialize(),
+		v.RoundVote.Prevote.Serialize(disableEmojis),
+		v.RoundVote.Precommit.Serialize(disableEmojis),
 		utils.RightPadAndTrim(strconv.Itoa(v.Validator.Index+1), 3),
 		utils.RightPadAndTrim(fmt.Sprintf("%.2f", v.Validator.VotingPowerPercent), 6),
 		utils.LeftPadAndTrim(name, 25),

@@ -2,6 +2,7 @@ package display
 
 import (
 	"fmt"
+	configPkg "main/pkg/config"
 	"main/pkg/types"
 	"main/static"
 	"strings"
@@ -49,11 +50,18 @@ type Wrapper struct {
 	IsPaused     bool
 
 	IsHelpDisplayed bool
+
+	DisableEmojis bool
 }
 
-func NewWrapper(logger zerolog.Logger, pauseChannel chan bool, appVersion string) *Wrapper {
-	lastRoundTableData := NewLastRoundTableData(DefaultColumnsCount)
-	allRoundsTableData := NewAllRoundsTableData()
+func NewWrapper(
+	config configPkg.Config,
+	logger zerolog.Logger,
+	pauseChannel chan bool,
+	appVersion string,
+) *Wrapper {
+	lastRoundTableData := NewLastRoundTableData(DefaultColumnsCount, config.DisableEmojis)
+	allRoundsTableData := NewAllRoundsTableData(config.DisableEmojis)
 
 	helpTextBytes, _ := static.TemplatesFs.ReadFile("help.txt")
 	helpText := strings.ReplaceAll(string(helpTextBytes), "{{ Version }}", appVersion)
@@ -116,6 +124,7 @@ func NewWrapper(logger zerolog.Logger, pauseChannel chan bool, appVersion string
 		PauseChannel:          pauseChannel,
 		IsPaused:              false,
 		IsHelpDisplayed:       false,
+		DisableEmojis:         config.DisableEmojis,
 	}
 }
 
@@ -171,9 +180,9 @@ func (w *Wrapper) Start() {
 
 	w.Redraw()
 
-	fmt.Fprint(w.ChainInfoTextView, "Loading...")
-	fmt.Fprint(w.ConsensusInfoTextView, "Loading...")
-	fmt.Fprint(w.ProgressTextView, "Loading...")
+	_, _ = fmt.Fprint(w.ChainInfoTextView, "Loading...")
+	_, _ = fmt.Fprint(w.ConsensusInfoTextView, "Loading...")
+	_, _ = fmt.Fprint(w.ProgressTextView, "Loading...")
 
 	w.App.SetBeforeDrawFunc(func(screen tcell.Screen) bool {
 		screen.Clear()
@@ -204,19 +213,19 @@ func (w *Wrapper) SetState(state *types.State) {
 	w.ConsensusInfoTextView.Clear()
 	w.ChainInfoTextView.Clear()
 	w.ProgressTextView.Clear()
-	fmt.Fprint(w.ConsensusInfoTextView, state.SerializeConsensus())
-	fmt.Fprint(w.ChainInfoTextView, state.SerializeChainInfo())
+	_, _ = fmt.Fprint(w.ConsensusInfoTextView, state.SerializeConsensus())
+	_, _ = fmt.Fprint(w.ChainInfoTextView, state.SerializeChainInfo())
 
 	_, _, width, height := w.ConsensusInfoTextView.GetInnerRect()
-	fmt.Fprint(w.ProgressTextView, state.SerializePrevotesProgressbar(width, height/2))
-	fmt.Fprint(w.ProgressTextView, "\n")
-	fmt.Fprint(w.ProgressTextView, state.SerializePrecommitsProgressbar(width, height/2))
+	_, _ = fmt.Fprint(w.ProgressTextView, state.SerializePrevotesProgressbar(width, height/2))
+	_, _ = fmt.Fprint(w.ProgressTextView, "\n")
+	_, _ = fmt.Fprint(w.ProgressTextView, state.SerializePrecommitsProgressbar(width, height/2))
 
 	w.App.Draw()
 }
 
 func (w *Wrapper) DebugText(text string) {
-	fmt.Fprint(w.DebugTextView, text)
+	_, _ = fmt.Fprint(w.DebugTextView, text)
 	w.DebugTextView.ScrollToEnd()
 }
 
