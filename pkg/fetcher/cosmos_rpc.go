@@ -22,7 +22,7 @@ import (
 	providerTypes "github.com/cosmos/interchain-security/x/ccv/provider/types"
 )
 
-type CosmosDataFetcher struct {
+type CosmosRPCDataFetcher struct {
 	Config         configPkg.Config
 	Logger         zerolog.Logger
 	Client         *http.Client
@@ -32,12 +32,12 @@ type CosmosDataFetcher struct {
 	ParseCodec *codec.ProtoCodec
 }
 
-func NewCosmosDataFetcher(config configPkg.Config, logger zerolog.Logger) *CosmosDataFetcher {
+func NewCosmosRPCDataFetcher(config configPkg.Config, logger zerolog.Logger) *CosmosRPCDataFetcher {
 	interfaceRegistry := codecTypes.NewInterfaceRegistry()
 	std.RegisterInterfaces(interfaceRegistry)
 	parseCodec := codec.NewProtoCodec(interfaceRegistry)
 
-	return &CosmosDataFetcher{
+	return &CosmosRPCDataFetcher{
 		Config:         config,
 		Logger:         logger.With().Str("component", "cosmos_data_fetcher").Logger(),
 		ProviderClient: http.NewClient(logger, "cosmos_data_fetcher", config.ProviderRPCHost),
@@ -47,7 +47,7 @@ func NewCosmosDataFetcher(config configPkg.Config, logger zerolog.Logger) *Cosmo
 	}
 }
 
-func (f *CosmosDataFetcher) GetProviderOrConsumerClient() *http.Client {
+func (f *CosmosRPCDataFetcher) GetProviderOrConsumerClient() *http.Client {
 	if f.Config.ProviderRPCHost != "" {
 		return f.ProviderClient
 	}
@@ -55,7 +55,7 @@ func (f *CosmosDataFetcher) GetProviderOrConsumerClient() *http.Client {
 	return f.Client
 }
 
-func (f *CosmosDataFetcher) GetValidatorAssignedConsumerKey(
+func (f *CosmosRPCDataFetcher) GetValidatorAssignedConsumerKey(
 	providerValcons string,
 ) (*providerTypes.QueryValidatorConsumerAddrResponse, error) {
 	query := providerTypes.QueryValidatorConsumerAddrRequest{
@@ -76,7 +76,7 @@ func (f *CosmosDataFetcher) GetValidatorAssignedConsumerKey(
 	return &response, nil
 }
 
-func (f *CosmosDataFetcher) AbciQuery(
+func (f *CosmosRPCDataFetcher) AbciQuery(
 	method string,
 	message codec.ProtoMarshaler,
 	output codec.ProtoMarshaler,
@@ -110,7 +110,7 @@ func (f *CosmosDataFetcher) AbciQuery(
 	return output.Unmarshal(response.Result.Response.Value)
 }
 
-func (f *CosmosDataFetcher) GetValidators() (*types.ChainValidators, error) {
+func (f *CosmosRPCDataFetcher) GetValidators() (*types.ChainValidators, error) {
 	query := stakingTypes.QueryValidatorsRequest{
 		Pagination: &queryTypes.PageRequest{
 			Limit: 1000,
@@ -182,7 +182,7 @@ func (f *CosmosDataFetcher) GetValidators() (*types.ChainValidators, error) {
 	return &validators, nil
 }
 
-func (f *CosmosDataFetcher) GetUpgradePlan() (*types.Upgrade, error) {
+func (f *CosmosRPCDataFetcher) GetUpgradePlan() (*types.Upgrade, error) {
 	query := upgradeTypes.QueryCurrentPlanRequest{}
 
 	var response upgradeTypes.QueryCurrentPlanResponse
