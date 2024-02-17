@@ -3,9 +3,42 @@ package config
 import (
 	"errors"
 	"fmt"
-	"slices"
 	"time"
 )
+
+type ChainType string
+
+const (
+	ChainTypeCosmosRPC  ChainType = "cosmos-rpc"
+	ChainTypeCosmosLCD  ChainType = "cosmos-lcd"
+	ChainTypeTendermint ChainType = "tendermint"
+)
+
+func (t *ChainType) String() string {
+	return string(*t)
+}
+
+func (t *ChainType) Set(v string) error {
+	switch v {
+	case "cosmos-rpc", "":
+		*t = ChainTypeCosmosRPC
+		return nil
+	case "cosmos-lcd":
+		*t = ChainTypeCosmosLCD
+		return nil
+	case "tendermint":
+		*t = ChainTypeTendermint
+		return nil
+	}
+
+	return fmt.Errorf(
+		"expected chain-type to be one of 'cosmos-rpc', 'cosmos-lcd', 'tendermint', but got '%s'",
+		v,
+	)
+}
+func (t *ChainType) Type() string {
+	return "ChainType"
+}
 
 type Config struct {
 	RPCHost               string
@@ -16,7 +49,7 @@ type Config struct {
 	ChainInfoRefreshRate  time.Duration
 	UpgradeRefreshRate    time.Duration
 	BlockTimeRefreshRate  time.Duration
-	ChainType             string
+	ChainType             ChainType
 	Verbose               bool
 	DisableEmojis         bool
 
@@ -36,15 +69,11 @@ func (c Config) IsConsumer() bool {
 }
 
 func (c Config) Validate() error {
-	if !slices.Contains([]string{"cosmos-rpc", "cosmos-lcd", "tendermint"}, c.ChainType) {
-		return fmt.Errorf("expected chain-type to be one of 'cosmos-rpc', 'cosmos-lcd', 'tendermint', but got '%s'", c.ChainType)
-	}
-
 	if c.IsConsumer() && c.ConsumerChainID == "" {
 		return errors.New("chain is consumer, but consumer-chain-id is not set")
 	}
 
-	if c.ChainType == "cosmos-lcd" && c.LCDHost == "" {
+	if c.ChainType == ChainTypeCosmosLCD && c.LCDHost == "" {
 		return errors.New("chain-type is 'cosmos-lcd', but lcd-node is not set")
 	}
 
