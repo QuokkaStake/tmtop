@@ -66,11 +66,19 @@ func (c *Client) Get(relativeURL string, target interface{}) error {
 
 func (c *Client) GetPlain(relativeURL string) ([]byte, error) {
 	body, err := c.GetInternal(relativeURL)
-	defer body.Close()
 
 	if err != nil {
 		return nil, err
 	}
 
-	return io.ReadAll(body)
+	bytes, err := io.ReadAll(body)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := body.Close(); err != nil {
+		return nil, err
+	}
+
+	return bytes, nil
 }
