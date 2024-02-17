@@ -13,8 +13,12 @@ type DataFetcher interface {
 }
 
 func GetDataFetcher(config configPkg.Config, logger zerolog.Logger) DataFetcher {
-	if config.ChainType == "cosmos" {
-		return NewCosmosDataFetcher(config, logger)
+	if config.ChainType == "cosmos-rpc" {
+		return NewCosmosRPCDataFetcher(config, logger)
+	}
+
+	if config.ChainType == "cosmos-lcd" {
+		return NewCosmosLcdDataFetcher(config, logger)
 	}
 
 	return NewNoopDataFetcher()
