@@ -52,6 +52,7 @@ type Wrapper struct {
 	IsHelpDisplayed bool
 
 	DisableEmojis bool
+	Transpose     bool
 }
 
 func NewWrapper(
@@ -60,7 +61,7 @@ func NewWrapper(
 	pauseChannel chan bool,
 	appVersion string,
 ) *Wrapper {
-	lastRoundTableData := NewLastRoundTableData(DefaultColumnsCount, config.DisableEmojis)
+	lastRoundTableData := NewLastRoundTableData(DefaultColumnsCount, config.DisableEmojis, false)
 	allRoundsTableData := NewAllRoundsTableData(config.DisableEmojis)
 
 	helpTextBytes, _ := static.TemplatesFs.ReadFile("help.txt")
@@ -125,6 +126,7 @@ func NewWrapper(
 		IsPaused:              false,
 		IsHelpDisplayed:       false,
 		DisableEmojis:         config.DisableEmojis,
+		Transpose:             false,
 	}
 }
 
@@ -156,6 +158,11 @@ func (w *Wrapper) Start() {
 
 		if event.Rune() == 'l' {
 			w.ChangeColumnsCount(false)
+		}
+
+		if event.Rune() == 't' {
+			w.Transpose = !w.Transpose
+			w.LastRoundTableData.SetTranspose(w.Transpose)
 		}
 
 		if event.Rune() == 'p' {

@@ -10,6 +10,7 @@ You can use the following shortcuts:
 - display [m[]more or [l[]ess columns in validators table
 - display or hide this [h[]elp message
 - [p[]ause new updates
+- [t[]ranspose the last round validators' view
 - [q[]uit the app (or Ctrl+C)
 
 You can also press [Tab[] to switch between modes, which are:

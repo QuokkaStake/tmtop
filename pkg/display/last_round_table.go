@@ -13,13 +13,15 @@ type LastRoundTableData struct {
 	Validators    types.ValidatorsWithInfo
 	ColumnsCount  int
 	DisableEmojis bool
+	Transpose     bool
 }
 
-func NewLastRoundTableData(columnsCount int, disableEmojis bool) *LastRoundTableData {
+func NewLastRoundTableData(columnsCount int, disableEmojis bool, transpose bool) *LastRoundTableData {
 	return &LastRoundTableData{
 		ColumnsCount:  columnsCount,
 		Validators:    make(types.ValidatorsWithInfo, 0),
 		DisableEmojis: disableEmojis,
+		Transpose:     transpose,
 	}
 }
 
@@ -27,8 +29,18 @@ func (d *LastRoundTableData) SetColumnsCount(count int) {
 	d.ColumnsCount = count
 }
 
+func (d *LastRoundTableData) SetTranspose(transpose bool) {
+	d.Transpose = transpose
+}
+
 func (d *LastRoundTableData) GetCell(row, column int) *tview.TableCell {
 	index := row*d.ColumnsCount + column
+
+	if d.Transpose {
+		rows := d.GetRowCount()
+		index = column*rows + row
+	}
+
 	text := ""
 
 	if index < len(d.Validators) {
