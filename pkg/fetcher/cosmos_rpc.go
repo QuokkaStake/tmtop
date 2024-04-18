@@ -7,6 +7,7 @@ import (
 	"main/pkg/http"
 	"main/pkg/types"
 	"net/url"
+	"strings"
 	"sync"
 
 	sdkTypes "github.com/cosmos/cosmos-sdk/types"
@@ -124,6 +125,9 @@ func (f *CosmosRPCDataFetcher) GetValidators() (*types.ChainValidators, error) {
 		&validatorsResponse,
 		f.GetProviderOrConsumerClient(),
 	); err != nil {
+		if strings.Contains(err.Error(), " please wait for first block") {
+			return f.GetGenesisValidators()
+		}
 		return nil, err
 	}
 
@@ -180,6 +184,12 @@ func (f *CosmosRPCDataFetcher) GetValidators() (*types.ChainValidators, error) {
 	wg.Wait()
 
 	return &validators, nil
+}
+
+func (f *CosmosRPCDataFetcher) GetGenesisValidators() (*types.ChainValidators, error) {
+	f.Logger.Info().Msg("Fetching genesis validators...")
+
+	return nil, fmt.Errorf("genesis validators fetching is not yet supported")
 }
 
 func (f *CosmosRPCDataFetcher) GetUpgradePlan() (*types.Upgrade, error) {
