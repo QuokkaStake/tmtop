@@ -84,7 +84,7 @@ func (rpc *RPC) GetValidators() ([]types.TendermintValidator, error) {
 
 func (rpc *RPC) GetValidatorsViaDumpConsensusState() ([]types.TendermintValidator, error) {
 	var response types.DumpConsensusStateResponse
-	if err := rpc.Client.Get(fmt.Sprintf("/dump_consensus_state"), &response); err != nil {
+	if err := rpc.Client.Get("/dump_consensus_state", &response); err != nil {
 		return nil, err
 	}
 

@@ -43,3 +43,4 @@ linters:
     - depguard
     - ireturn
     - dogsled
+    - perfsprint
