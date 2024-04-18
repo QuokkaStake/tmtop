@@ -1,6 +1,8 @@
 package fetcher
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	configPkg "main/pkg/config"
@@ -21,7 +23,7 @@ import (
 	queryTypes "github.com/cosmos/cosmos-sdk/types/query"
 	stakingTypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	upgradeTypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
-	providerTypes "github.com/cosmos/interchain-security/x/ccv/provider/types"
+	providerTypes "github.com/cosmos/interchain-security/v3/x/ccv/provider/types"
 )
 
 type CosmosRPCDataFetcher struct {
@@ -112,6 +114,23 @@ func (f *CosmosRPCDataFetcher) AbciQuery(
 	return output.Unmarshal(response.Result.Response.Value)
 }
 
+func (f *CosmosRPCDataFetcher) ParseValidator(validator stakingTypes.Validator) (types.ChainValidator, error) {
+	if err := validator.UnpackInterfaces(f.ParseCodec); err != nil {
+		return types.ChainValidator{}, err
+	}
+
+	addr, err := validator.GetConsAddr()
+	if err != nil {
+		return types.ChainValidator{}, err
+	}
+
+	return types.ChainValidator{
+		Moniker:    validator.GetMoniker(),
+		Address:    fmt.Sprintf("%X", addr),
+		RawAddress: addr.String(),
+	}, nil
+}
+
 func (f *CosmosRPCDataFetcher) GetValidators() (*types.ChainValidators, error) {
 	query := stakingTypes.QueryValidatorsRequest{
 		Pagination: &queryTypes.PageRequest{
@@ -135,19 +154,10 @@ func (f *CosmosRPCDataFetcher) GetValidators() (*types.ChainValidators, error) {
 	validators := make(types.ChainValidators, len(validatorsResponse.Validators))
 
 	for index, validator := range validatorsResponse.Validators {
-		if err := validator.UnpackInterfaces(f.ParseCodec); err != nil {
+		if chainValidator, err := f.ParseValidator(validator); err != nil {
 			return nil, err
-		}
-
-		addr, err := validator.GetConsAddr()
-		if err != nil {
-			return nil, err
-		}
-
-		validators[index] = types.ChainValidator{
-			Moniker:    validator.GetMoniker(),
-			Address:    fmt.Sprintf("%X", addr),
-			RawAddress: addr.String(),
+		} else {
+			validators[index] = chainValidator
 		}
 	}
 
@@ -190,23 +200,57 @@ func (f *CosmosRPCDataFetcher) GetValidators() (*types.ChainValidators, error) {
 func (f *CosmosRPCDataFetcher) GetGenesisValidators() (*types.ChainValidators, error) {
 	f.Logger.Info().Msg("Fetching genesis validators...")
 
-	genesisAsBytes := make([]byte, 0)
+	genesisChunks := make([][]byte, 0)
 	var chunk int64 = 0
 
 	for {
 		f.Logger.Info().Int64("chunk", chunk).Msg("Fetching genesis chunk...")
 		genesisChunk, total, err := f.GetGenesisChunk(chunk)
+		f.Logger.Info().Int64("chunk", chunk).Int64("total", total).Msg("Fetched genesis chunk...")
 		if err != nil {
 			return nil, err
 		}
 
-		genesisAsBytes = append(genesisAsBytes, genesisChunk...)
+		genesisChunks = append(genesisChunks, genesisChunk)
 
-		if chunk <= total {
+		if chunk >= total-1 {
 			break
 		}
 
 		chunk++
+	}
+
+	genesisBytes := bytes.Join(genesisChunks, []byte{})
+	f.Logger.Info().Int("length", len(genesisBytes)).Msg("Fetched genesis")
+
+	var genesisStruct types.Genesis
+
+	if err := json.Unmarshal(genesisBytes, &genesisStruct); err != nil {
+		f.Logger.Error().Err(err).Msg("Error unmarshalling genesis")
+		return nil, err
+	}
+
+	var stakingGenesisState stakingTypes.GenesisState
+	if err := f.ParseCodec.UnmarshalJSON(genesisStruct.AppState.Staking, &stakingGenesisState); err != nil {
+		f.Logger.Error().Err(err).Msg("Error unmarshalling staking genesis state")
+		return nil, err
+	}
+
+	f.Logger.Info().Int("validators", len(stakingGenesisState.Validators)).Msg("Genesis unmarshalled")
+
+	// 1. Trying to fetch validators from staking module. Works for chain which did not start
+	// from the first block but had their genesis as an export from older chain.
+	if len(stakingGenesisState.Validators) > 0 {
+		validators := make(types.ChainValidators, len(stakingGenesisState.Validators))
+		for index, validator := range stakingGenesisState.Validators {
+			if chainValidator, err := f.ParseValidator(validator); err != nil {
+				return nil, err
+			} else {
+				validators[index] = chainValidator
+			}
+		}
+
+		return &validators, nil
 	}
 
 	return nil, fmt.Errorf("genesis validators fetching is not yet supported")
