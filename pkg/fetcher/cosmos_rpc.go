@@ -7,6 +7,7 @@ import (
 	"main/pkg/http"
 	"main/pkg/types"
 	"net/url"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -189,7 +190,47 @@ func (f *CosmosRPCDataFetcher) GetValidators() (*types.ChainValidators, error) {
 func (f *CosmosRPCDataFetcher) GetGenesisValidators() (*types.ChainValidators, error) {
 	f.Logger.Info().Msg("Fetching genesis validators...")
 
+	genesisAsBytes := make([]byte, 0)
+	var chunk int64 = 0
+
+	for {
+		f.Logger.Info().Int64("chunk", chunk).Msg("Fetching genesis chunk...")
+		genesisChunk, total, err := f.GetGenesisChunk(chunk)
+		if err != nil {
+			return nil, err
+		}
+
+		genesisAsBytes = append(genesisAsBytes, genesisChunk...)
+
+		if chunk <= total {
+			break
+		}
+
+		chunk++
+	}
+
 	return nil, fmt.Errorf("genesis validators fetching is not yet supported")
+}
+
+func (f *CosmosRPCDataFetcher) GetGenesisChunk(chunk int64) ([]byte, int64, error) {
+	var response types.TendermintGenesisChunkResponse
+	if err := f.Client.Get(
+		fmt.Sprintf("/genesis_chunked?chunk=%d", chunk),
+		&response,
+	); err != nil {
+		return nil, 0, err
+	}
+
+	if response.Result == nil {
+		return nil, 0, fmt.Errorf("malformed response from node")
+	}
+
+	total, err := strconv.ParseInt(response.Result.Total, 10, 64)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return response.Result.Data, total, nil
 }
 
 func (f *CosmosRPCDataFetcher) GetUpgradePlan() (*types.Upgrade, error) {
