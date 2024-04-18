@@ -56,10 +56,12 @@ func (a *Aggregator) GetData() (
 	wg.Wait()
 
 	if consensusError != nil {
+		a.Logger.Error().Err(consensusError).Msg("Could not fetch consensus data")
 		return nil, nil, consensusError
 	}
 
 	if validatorsError != nil {
+		a.Logger.Error().Err(validatorsError).Msg("Could not fetch validators")
 		return nil, nil, validatorsError
 	}
 
