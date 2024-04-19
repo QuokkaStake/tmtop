@@ -75,7 +75,8 @@ func NewWrapper(
 	allRoundsTable := tview.NewTable().
 		SetBorders(false).
 		SetSelectable(false, false).
-		SetContent(allRoundsTableData)
+		SetContent(allRoundsTableData).
+		SetFixed(0, 1)
 
 	consensusInfoTextView := tview.NewTextView().
 		SetDynamicColors(true).
