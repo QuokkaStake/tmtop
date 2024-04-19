@@ -91,7 +91,7 @@ func (rpc *RPC) GetValidatorsViaDumpConsensusState() ([]types.TendermintValidato
 	if response.Result == nil ||
 		response.Result.RoundState == nil ||
 		len(response.Result.RoundState.Validators.Validators) == 0 {
-		return nil, fmt.Errorf("malformed response from /dump_consensus-state")
+		return nil, fmt.Errorf("malformed response from /dump_consensus_state")
 	}
 
 	return response.Result.RoundState.Validators.Validators, nil
