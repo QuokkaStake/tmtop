@@ -52,6 +52,7 @@ type Config struct {
 	ChainType             ChainType
 	Verbose               bool
 	DisableEmojis         bool
+	DebugFile             string
 
 	LCDHost string
 }

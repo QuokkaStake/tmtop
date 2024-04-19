@@ -110,6 +110,8 @@ This app has 2 modes, use [Tab] button to switch between them:
 If you have issues with the app, try pressing the D button to open the debug panel.
 Most likely, the app cannot connect to one of the hosts it needs to connect.
 If there's something unusual, feel free to report a bug on this repository.
+You can also enable debug logging and write them to file in addition to the debug panel
+by running tmtop with `--verbose --debug-file <path-to-file>`.
 
 Some common errors:
 

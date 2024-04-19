@@ -15,16 +15,44 @@ func GetDefaultLogger() *zerolog.Logger {
 
 type Writer struct {
 	io.Writer
+	DebugFile  *os.File
 	LogChannel chan string
+}
+
+func NewWriter(logChannel chan string, config configPkg.Config) Writer {
+	writer := Writer{
+		LogChannel: logChannel,
+	}
+
+	if config.DebugFile != "" {
+		debugFile, err := os.OpenFile(config.DebugFile, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0755)
+		if err != nil {
+			panic(err)
+		}
+
+		writer.DebugFile = debugFile
+	}
+
+	return writer
 }
 
 func (w Writer) Write(msg []byte) (int, error) {
 	w.LogChannel <- string(msg)
+
+	if w.DebugFile != nil {
+		if _, err := w.DebugFile.Write(msg); err != nil {
+			return 0, err
+		}
+	}
+
 	return len(msg), nil
 }
 
 func GetLogger(logChannel chan string, config configPkg.Config) *zerolog.Logger {
-	writer := zerolog.ConsoleWriter{Out: Writer{LogChannel: logChannel}, NoColor: true}
+	writer := zerolog.ConsoleWriter{
+		Out:     NewWriter(logChannel, config),
+		NoColor: true,
+	}
 	log := zerolog.New(writer).With().Timestamp().Logger()
 
 	if config.Verbose {
