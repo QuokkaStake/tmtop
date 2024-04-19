@@ -13,6 +13,9 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/cosmos/cosmos-sdk/x/auth/tx"
+	genutilTypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
+
 	sdkTypes "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/cosmos/cosmos-sdk/std"
@@ -20,6 +23,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	codecTypes "github.com/cosmos/cosmos-sdk/codec/types"
+	cryptoTypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	queryTypes "github.com/cosmos/cosmos-sdk/types/query"
 	stakingTypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	upgradeTypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
@@ -34,12 +38,15 @@ type CosmosRPCDataFetcher struct {
 
 	Registry   codecTypes.InterfaceRegistry
 	ParseCodec *codec.ProtoCodec
+	TxDecoder  sdkTypes.TxDecoder
 }
 
 func NewCosmosRPCDataFetcher(config configPkg.Config, logger zerolog.Logger) *CosmosRPCDataFetcher {
 	interfaceRegistry := codecTypes.NewInterfaceRegistry()
 	std.RegisterInterfaces(interfaceRegistry)
+	stakingTypes.RegisterInterfaces(interfaceRegistry) // for MsgCreateValidator for gentx parsing
 	parseCodec := codec.NewProtoCodec(interfaceRegistry)
+	txDecoder := tx.NewTxConfig(parseCodec, tx.DefaultSignModes)
 
 	return &CosmosRPCDataFetcher{
 		Config:         config,
@@ -48,6 +55,7 @@ func NewCosmosRPCDataFetcher(config configPkg.Config, logger zerolog.Logger) *Co
 		Client:         http.NewClient(logger, "cosmos_data_fetcher", config.RPCHost),
 		Registry:       interfaceRegistry,
 		ParseCodec:     parseCodec,
+		TxDecoder:      txDecoder.TxJSONDecoder(),
 	}
 }
 
@@ -253,7 +261,52 @@ func (f *CosmosRPCDataFetcher) GetGenesisValidators() (*types.ChainValidators, e
 		return &validators, nil
 	}
 
-	return nil, fmt.Errorf("genesis validators fetching is not yet supported")
+	// 2. If there's 0 validators in staking module, then we parse genutil module
+	// and converting validators from their gentxs.
+	var genutilGenesisState genutilTypes.GenesisState
+	if err := f.ParseCodec.UnmarshalJSON(genesisStruct.AppState.Genutil, &genutilGenesisState); err != nil {
+		f.Logger.Error().Err(err).Msg("Error unmarshalling genutil genesis state")
+		return nil, err
+	}
+
+	validators := make(types.ChainValidators, len(genutilGenesisState.GenTxs))
+	for index, gentx := range genutilGenesisState.GenTxs {
+		decodedTx, err := f.TxDecoder(gentx)
+		if err != nil {
+			f.Logger.Error().Err(err).Msg("Error decoding gentx")
+			return nil, err
+		}
+
+		if len(decodedTx.GetMsgs()) != 1 {
+			f.Logger.Error().
+				Int("length", len(decodedTx.GetMsgs())).
+				Msg("Error decoding gentx: expected 1 message")
+			return nil, err
+		}
+
+		msg := decodedTx.GetMsgs()[0]
+		msgCreateValidator, ok := msg.(*stakingTypes.MsgCreateValidator)
+		if !ok {
+			f.Logger.Error().Msg("gentx msg is not MsgCreateValidator")
+			return nil, err
+		}
+
+		var pubkey cryptoTypes.PubKey
+		if err := f.ParseCodec.UnpackAny(msgCreateValidator.Pubkey, &pubkey); err != nil {
+			f.Logger.Error().Err(err).Msg("Error unpacking pubkey")
+			return nil, err
+		}
+
+		addr := sdkTypes.ConsAddress(pubkey.Address())
+
+		validators[index] = types.ChainValidator{
+			Moniker:    msgCreateValidator.Description.Moniker,
+			Address:    fmt.Sprintf("%X", addr),
+			RawAddress: addr.String(),
+		}
+	}
+
+	return &validators, nil
 }
 
 func (f *CosmosRPCDataFetcher) GetGenesisChunk(chunk int64) ([]byte, int64, error) {

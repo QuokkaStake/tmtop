@@ -8,4 +8,5 @@ type Genesis struct {
 
 type AppState struct {
 	Staking json.RawMessage `json:"staking"`
+	Genutil json.RawMessage `json:"genutil"`
 }
