@@ -45,6 +45,7 @@ func main() {
 	rootCmd.PersistentFlags().DurationVar(&config.UpgradeRefreshRate, "upgrade-refresh-rate", 30*time.Minute, "Upgrades refresh rate")
 	rootCmd.PersistentFlags().DurationVar(&config.BlockTimeRefreshRate, "block-time-refresh-rate", 30*time.Second, "Block time refresh rate")
 	rootCmd.PersistentFlags().StringVar(&config.LCDHost, "lcd-host", "", "LCD API host URL")
+	rootCmd.PersistentFlags().StringVar(&config.DebugFile, "debug-file", "", "Path to file to write debug info/logs to")
 
 	if err := rootCmd.Execute(); err != nil {
 		logger.GetDefaultLogger().Fatal().Err(err).Msg("Could not start application")
