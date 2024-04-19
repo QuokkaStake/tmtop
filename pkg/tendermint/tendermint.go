@@ -135,6 +135,10 @@ func (rpc *RPC) GetBlockTime() (time.Duration, error) {
 		return 0, err
 	}
 
+	if latestBlock.Result.Block == nil {
+		return 0, fmt.Errorf("no current block present")
+	}
+
 	latestBlockHeight, err := strconv.ParseInt(latestBlock.Result.Block.Header.Height, 10, 64)
 	if err != nil {
 		rpc.Logger.Error().
@@ -148,6 +152,10 @@ func (rpc *RPC) GetBlockTime() (time.Duration, error) {
 	if err != nil {
 		rpc.Logger.Error().Err(err).Msg("Could not fetch older block")
 		return 0, err
+	}
+
+	if olderBlock.Result.Block == nil {
+		return 0, fmt.Errorf("no older block present")
 	}
 
 	blocksDiffTime := latestBlock.Result.Block.Header.Time.Sub(olderBlock.Result.Block.Header.Time)

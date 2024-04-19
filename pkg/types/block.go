@@ -7,7 +7,7 @@ type TendermintBlockResponse struct {
 }
 
 type TendermintBlockResult struct {
-	Block TendermintBlock `json:"block"`
+	Block *TendermintBlock `json:"block"`
 }
 
 type TendermintBlock struct {
