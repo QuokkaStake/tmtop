@@ -6,6 +6,7 @@ import (
 	configPkg "main/pkg/config"
 	"main/pkg/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"main/pkg/types"
@@ -48,7 +49,20 @@ func (rpc *RPC) GetValidators() ([]types.TendermintValidator, error) {
 			return nil, err
 		}
 
-		if response == nil || response.Result == nil || response.Result.Total == "" {
+		if response == nil {
+			return nil, errors.New("malformed response from node: no response")
+		}
+
+		if response.Error != nil {
+			// on genesis, /validators is not working
+			if strings.Contains(response.Error.Data, "could not find validator set for height") {
+				return rpc.GetValidatorsViaDumpConsensusState()
+			}
+
+			return nil, fmt.Errorf("malformed response from node: %s: %s", response.Error.Message, response.Error.Data)
+		}
+
+		if response.Result == nil || response.Result.Total == "" {
 			return nil, errors.New("malformed response from node")
 		}
 
@@ -66,6 +80,21 @@ func (rpc *RPC) GetValidators() ([]types.TendermintValidator, error) {
 	}
 
 	return validators, nil
+}
+
+func (rpc *RPC) GetValidatorsViaDumpConsensusState() ([]types.TendermintValidator, error) {
+	var response types.DumpConsensusStateResponse
+	if err := rpc.Client.Get("/dump_consensus_state", &response); err != nil {
+		return nil, err
+	}
+
+	if response.Result == nil ||
+		response.Result.RoundState == nil ||
+		len(response.Result.RoundState.Validators.Validators) == 0 {
+		return nil, fmt.Errorf("malformed response from /dump_consensus_state")
+	}
+
+	return response.Result.RoundState.Validators.Validators, nil
 }
 
 func (rpc *RPC) GetStatus() (*types.TendermintStatusResponse, error) {
@@ -106,6 +135,10 @@ func (rpc *RPC) GetBlockTime() (time.Duration, error) {
 		return 0, err
 	}
 
+	if latestBlock.Result.Block == nil {
+		return 0, fmt.Errorf("no current block present")
+	}
+
 	latestBlockHeight, err := strconv.ParseInt(latestBlock.Result.Block.Header.Height, 10, 64)
 	if err != nil {
 		rpc.Logger.Error().
@@ -119,6 +152,10 @@ func (rpc *RPC) GetBlockTime() (time.Duration, error) {
 	if err != nil {
 		rpc.Logger.Error().Err(err).Msg("Could not fetch older block")
 		return 0, err
+	}
+
+	if olderBlock.Result.Block == nil {
+		return 0, fmt.Errorf("no older block present")
 	}
 
 	blocksDiffTime := latestBlock.Result.Block.Header.Time.Sub(olderBlock.Result.Block.Header.Time)

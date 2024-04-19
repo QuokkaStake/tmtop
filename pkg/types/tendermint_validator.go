@@ -2,6 +2,12 @@ package types
 
 type ValidatorsResponse struct {
 	Result *ValidatorsResult `json:"result"`
+	Error  *ValidatorsError  `json:"error"`
+}
+
+type ValidatorsError struct {
+	Message string `json:"message"`
+	Data    string `json:"data"`
 }
 
 type ValidatorsResult struct {

@@ -14,6 +14,7 @@ It can do the following:
 - work with ICS (fetching the validators list from the provider chain while taking the consensus from the consumer chain)
 - display both the consensus state for the last round (same way as pvtop, for example)
 or for all rounds (this is useful to see which rounds your validator has prevoted/precommitted on)
+- display the consensus state for a chain that didn't produce a single block (useful for genesis launch)
 
 See how it looks like (on Sentinel chain, which is cosmos-sdk based chain, and Nomic, which uses Tendermint
 but not cosmos-sdk):
@@ -83,6 +84,13 @@ It queries Tendermint's RPC node to get the following data:
 - blocks and their time difference
 and uses this data to build a consensus state to visualise.
 
+If it fails to scrape the validators list, it falls back to use genesis for both Cosmos validators list
+and Tendermint validators list, either taking them from genesis' staking module state (if the genesis is done
+by exporting the previous state), or from gentxs (if it's the launch of a branch new chain).
+
+(Note: fetching the genesis data from LCD is not supported, as apparently LCD does not provide the endpoint
+to fetch genesis.)
+
 Additionally, if it's a cosmos-sdk chain, it can also fetch the following data via the abci_query query:
 - chain upgrade info
 - validators list (to show validators' monikers instead of addresses)
@@ -117,7 +125,8 @@ Q: The app displays hashes instead of validators' monikers.
 
 A: For consumer chains, it's likely that the app cannot connect to the provider host,
 or it's not specified (so the app thinks it's a sovereign chain and tries to get validators
-out of the consumer chain). Additionally, this won't work with non-cosmos-sdk chains, like Nomic.
+out of the consumer chain). Additionally, this won't work with non-cosmos-sdk chains, like Nomic, if the chain's
+Tendermint /abci_query endpoint doesn't return validators when querying for them.
 
 Q: The app displays some monikers as hashes on a consumer chain.
 
