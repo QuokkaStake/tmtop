@@ -96,8 +96,7 @@ func (d *AllRoundsTableData) GetCell(row, column int) *tview.TableCell {
 
 		return tview.
 			NewTableCell(d.Headers[row].Value(column-1, roundVotes, d.Validators.Validators)).
-			SetAlign(tview.AlignCenter).
-			SetStyle(tcell.StyleDefault.Bold(true))
+			SetAlign(tview.AlignCenter)
 	}
 
 	// First column is always validators list.
