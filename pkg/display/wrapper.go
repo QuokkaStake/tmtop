@@ -78,6 +78,20 @@ func NewWrapper(
 		SetContent(allRoundsTableData).
 		SetFixed(len(allRoundsTableData.Headers), 1)
 
+	allRoundsTable.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyLeft && event.Modifiers() == tcell.ModCtrl {
+			prevOffset, _ := allRoundsTable.GetOffset()
+			allRoundsTable.SetOffset(prevOffset, allRoundsTable.GetColumnCount())
+		}
+
+		if event.Key() == tcell.KeyRight && event.Modifiers() == tcell.ModCtrl {
+			prevOffset, _ := allRoundsTable.GetOffset()
+			allRoundsTable.SetOffset(prevOffset, 0)
+		}
+
+		return event
+	})
+
 	consensusInfoTextView := tview.NewTextView().
 		SetDynamicColors(true).
 		SetRegions(true)
