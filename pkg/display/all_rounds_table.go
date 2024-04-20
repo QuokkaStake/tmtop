@@ -121,11 +121,11 @@ func (d *AllRoundsTableData) GetCell(row, column int) *tview.TableCell {
 }
 
 func (d *AllRoundsTableData) GetRowCount() int {
-	return len(d.Validators.Validators) + 1
+	return len(d.Validators.Validators) + len(d.Headers)
 }
 
 func (d *AllRoundsTableData) GetColumnCount() int {
-	return len(d.Validators.RoundsVotes) + 1
+	return len(d.Validators.RoundsVotes) + len(d.Headers)
 }
 
 func (d *AllRoundsTableData) SetValidators(validators types.ValidatorsWithInfoAndAllRoundVotes) {
