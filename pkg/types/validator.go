@@ -40,6 +40,19 @@ type ValidatorWithRoundVote struct {
 
 type ValidatorsWithRoundVote []ValidatorWithRoundVote
 
+func ValidatorsWithRoundVoteFrom(validators []ValidatorWithChainValidator, roundVotes RoundVotes) ValidatorsWithRoundVote {
+	response := make([]ValidatorWithRoundVote, len(validators))
+
+	for index, validator := range validators {
+		response[index] = ValidatorWithRoundVote{
+			Validator: validator.Validator,
+			RoundVote: roundVotes[index],
+		}
+	}
+
+	return response
+}
+
 type ValidatorsWithAllRoundsVotes struct {
 	Validators  []Validator
 	RoundsVotes []RoundVotes
