@@ -125,7 +125,7 @@ func (d *AllRoundsTableData) GetRowCount() int {
 }
 
 func (d *AllRoundsTableData) GetColumnCount() int {
-	return len(d.Validators.RoundsVotes) + len(d.Headers)
+	return len(d.Validators.RoundsVotes) + 1 // first column is header
 }
 
 func (d *AllRoundsTableData) SetValidators(validators types.ValidatorsWithInfoAndAllRoundVotes) {
