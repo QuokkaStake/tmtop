@@ -16,3 +16,5 @@ You can use the following shortcuts:
 You can also press [Tab[] to switch between modes, which are:
 - display last round prevotes/precommits
 - display prevotes/precommits for all rounds
+
+If you're on the all rounds mode, you can use Ctrl+left/right arrow to scroll to first/last round.
