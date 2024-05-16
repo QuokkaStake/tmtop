@@ -1,10 +1,13 @@
 package utils
 
 import (
+	"bytes"
 	loggerPkg "main/pkg/logger"
 	"math"
 	"strconv"
 	"time"
+
+	"github.com/btcsuite/btcutil/bech32"
 )
 
 func MustParseInt64(source string) int64 {
@@ -75,4 +78,28 @@ func SerializeDuration(duration time.Duration) time.Duration {
 	}
 
 	return duration.Round(time.Millisecond / denom)
+}
+
+func Find[T any](slice []T, f func(T) bool) (T, bool) {
+	for _, elt := range slice {
+		if f(elt) {
+			return elt, true
+		}
+	}
+
+	return *new(T), false
+}
+
+func CompareTwoBech32(first, second string) (bool, error) {
+	_, firstBytes, err := bech32.Decode(first)
+	if err != nil {
+		return false, err
+	}
+
+	_, secondBytes, err := bech32.Decode(second)
+	if err != nil {
+		return false, err
+	}
+
+	return bytes.Equal(firstBytes, secondBytes), nil
 }

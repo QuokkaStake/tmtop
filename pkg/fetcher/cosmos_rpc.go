@@ -8,10 +8,10 @@ import (
 	configPkg "main/pkg/config"
 	"main/pkg/http"
 	"main/pkg/types"
+	"main/pkg/utils"
 	"net/url"
 	"strconv"
 	"strings"
-	"sync"
 
 	"github.com/cosmos/cosmos-sdk/x/auth/tx"
 	genutilTypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
@@ -27,7 +27,7 @@ import (
 	queryTypes "github.com/cosmos/cosmos-sdk/types/query"
 	stakingTypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	upgradeTypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
-	providerTypes "github.com/cosmos/interchain-security/v3/x/ccv/provider/types"
+	providerTypes "github.com/cosmos/interchain-security/v4/x/ccv/provider/types"
 )
 
 type CosmosRPCDataFetcher struct {
@@ -65,27 +65,6 @@ func (f *CosmosRPCDataFetcher) GetProviderOrConsumerClient() *http.Client {
 	}
 
 	return f.Client
-}
-
-func (f *CosmosRPCDataFetcher) GetValidatorAssignedConsumerKey(
-	providerValcons string,
-) (*providerTypes.QueryValidatorConsumerAddrResponse, error) {
-	query := providerTypes.QueryValidatorConsumerAddrRequest{
-		ChainId:         f.Config.ConsumerChainID,
-		ProviderAddress: providerValcons,
-	}
-
-	var response providerTypes.QueryValidatorConsumerAddrResponse
-	if err := f.AbciQuery(
-		"/interchain_security.ccv.provider.v1.Query/QueryValidatorConsumerAddr",
-		&query,
-		&response,
-		f.ProviderClient,
-	); err != nil {
-		return nil, err
-	}
-
-	return &response, nil
 }
 
 func (f *CosmosRPCDataFetcher) AbciQuery(
@@ -173,34 +152,45 @@ func (f *CosmosRPCDataFetcher) GetValidators() (*types.ChainValidators, error) {
 		return &validators, nil
 	}
 
-	// fetching assigned keys
-	var wg sync.WaitGroup
-	var mutex sync.Mutex
-
-	for index, validator := range validators {
-		wg.Add(1)
-		go func(validator types.ChainValidator, index int) {
-			defer wg.Done()
-			assignedKey, err := f.GetValidatorAssignedConsumerKey(validator.RawAddress)
-
-			if err != nil {
-				f.Logger.Error().Err(err).Msg("Could not fetch assigned key")
-				return
-			}
-
-			assignedKeyAsString := assignedKey.GetConsumerAddress()
-			if assignedKeyAsString != "" {
-				addr, _ := sdkTypes.ConsAddressFromBech32(assignedKeyAsString)
-
-				mutex.Lock()
-				validators[index].AssignedAddress = addr.String()
-				validators[index].RawAssignedAddress = fmt.Sprintf("%X", addr)
-				mutex.Unlock()
-			}
-		}(validator, index)
+	assignedKeysQuery := providerTypes.QueryAllPairsValConAddrByConsumerChainIDRequest{
+		ChainId: f.Config.ConsumerChainID,
 	}
 
-	wg.Wait()
+	var assignedKeysResponse providerTypes.QueryAllPairsValConAddrByConsumerChainIDResponse
+	if err := f.AbciQuery(
+		"/interchain_security.ccv.provider.v1.Query/QueryAllPairsValConAddrByConsumerChainID",
+		&assignedKeysQuery,
+		&assignedKeysResponse,
+		f.ProviderClient,
+	); err != nil {
+		return nil, err
+	}
+
+	for index, validator := range validators {
+		assignedConsensusAddr, ok := utils.Find(
+			assignedKeysResponse.PairValConAddr,
+			func(i *providerTypes.PairValConAddrProviderAndConsumer) bool {
+				equal, compareErr := utils.CompareTwoBech32(i.ProviderAddress, validator.RawAddress)
+				if compareErr != nil {
+					f.Logger.Error().
+						Str("operator_address", validator.Address).
+						Str("first", i.ProviderAddress).
+						Str("second", validator.RawAddress).
+						Msg("Error converting bech32 address")
+					return false
+				}
+
+				return equal
+			},
+		)
+
+		if ok {
+			addr, _ := sdkTypes.ConsAddressFromBech32(assignedConsensusAddr.ConsumerAddress)
+
+			validators[index].AssignedAddress = addr.String()
+			validators[index].RawAssignedAddress = fmt.Sprintf("%X", addr)
+		}
+	}
 
 	return &validators, nil
 }
