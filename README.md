@@ -51,26 +51,26 @@ Then just run it:
 
 To run it for a sovereign Cosmos-based chain, something like this should be enough:
 ```
-./tmtop --rpc-host <RPC host address>
+./tmtop <RPC host address>
 ```
 
 To run it for a sovereign chain that is not Cosmos-based (for example, Nomic), something like this should be enough
 (this will limit the app possibilities, as in, it won't display validators monikers,
 upgrades status etc.):
 ```
-./tmtop  --rpc-host <RPC host address> --chain-type tendermint
+./tmtop <RPC host address> --chain-type tendermint
 ```
 
 If a chain is not Cosmos-based, but exposes a webserver that is compatible with LCD REST API of cosmos-sdk,
 you can try running it this way to fetch data from LCD (the `--lcd-host` parameter is not used in other cases):
 ```
-./tmtop  --rpc-host <RPC host address> --chain-type cosmos-lcd --lcd-host <LCD host address>
+./tmtop <RPC host address> --chain-type cosmos-lcd --lcd-host <LCD host address>
 ```
 
 To run it for a Cosmos-based consumer chains (like Stride or Neutron),
 something like this should be enough:
 ```
-./tmtop  --rpc-host <RPC host address> --provider-rpc-host <provider RPC host> --consumer-chain-id <consumer chain ID>
+./tmtop <RPC host address> --provider-rpc-host <provider RPC host> --consumer-chain-id <consumer chain ID>
 ```
 
 There are more parameters to tweak, for all the possible arguments, see `./tmtop --help`.
