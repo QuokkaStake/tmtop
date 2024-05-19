@@ -13,7 +13,13 @@ var (
 	version = "unknown"
 )
 
-func Execute(config configPkg.Config) {
+func Execute(config configPkg.Config, args []string) {
+	if len(args) == 0 || args[0] == "" {
+		config.RPCHost = "http://localhost:26657"
+	} else {
+		config.RPCHost = args[0]
+	}
+
 	app := pkg.NewApp(config, version)
 	app.Start()
 }
@@ -22,18 +28,18 @@ func main() {
 	var config configPkg.Config
 
 	rootCmd := &cobra.Command{
-		Use:     "tmtop",
+		Use:     "tmtop [RPC host URL]",
 		Long:    "Observe the pre-voting status of any Tendermint-based blockchain.",
 		Version: version,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			return config.Validate()
 		},
+		Args: cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			Execute(config)
+			Execute(config, args)
 		},
 	}
 
-	rootCmd.PersistentFlags().StringVar(&config.RPCHost, "rpc-host", "http://localhost:26657", "RPC host URL")
 	rootCmd.PersistentFlags().StringVar(&config.ProviderRPCHost, "provider-rpc-host", "", "Provider chain RPC host URL")
 	rootCmd.PersistentFlags().StringVar(&config.ConsumerChainID, "consumer-chain-id", "", "Consumer chain ID")
 	rootCmd.PersistentFlags().DurationVar(&config.RefreshRate, "refresh-rate", time.Second, "Refresh rate")
