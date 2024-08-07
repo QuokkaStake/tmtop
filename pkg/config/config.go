@@ -53,6 +53,7 @@ type Config struct {
 	Verbose               bool
 	DisableEmojis         bool
 	DebugFile             string
+	HaltHeight            int64
 
 	LCDHost string
 }

@@ -176,6 +176,17 @@ func (a *App) RefreshUpgrade() {
 		return
 	}
 
+	if a.Config.HaltHeight > 0 {
+		upgrade := &types.Upgrade{
+			Name:   "halt-height upgrade",
+			Height: a.Config.HaltHeight,
+		}
+
+		a.State.SetUpgrade(upgrade)
+		a.DisplayWrapper.SetState(a.State)
+		return
+	}
+
 	upgrade, err := a.Aggregator.GetUpgrade()
 	if err != nil {
 		a.Logger.Error().Err(err).Msg("Error getting upgrade")
