@@ -14,21 +14,28 @@ type AllRoundsTableData struct {
 
 	Validators    types.ValidatorsWithInfoAndAllRoundVotes
 	DisableEmojis bool
+	Transpose     bool
 }
 
-func NewAllRoundsTableData(disableEmojis bool) *AllRoundsTableData {
+func NewAllRoundsTableData(disableEmojis bool, transpose bool) *AllRoundsTableData {
 	return &AllRoundsTableData{
 		Validators:    types.ValidatorsWithInfoAndAllRoundVotes{},
 		DisableEmojis: disableEmojis,
+		Transpose:     transpose,
 	}
 }
 
 func (d *AllRoundsTableData) GetCell(row, column int) *tview.TableCell {
+	round := column - 1
+	if d.Transpose {
+		round = len(d.Validators.RoundsVotes) - column
+	}
+
 	// Table header.
 	if row == 0 {
 		text := "validator"
 		if column != 0 {
-			text = strconv.Itoa(column - 1)
+			text = strconv.Itoa(round)
 		}
 
 		return tview.
@@ -44,7 +51,7 @@ func (d *AllRoundsTableData) GetCell(row, column int) *tview.TableCell {
 		return cell
 	}
 
-	roundVotes := d.Validators.RoundsVotes[column-1]
+	roundVotes := d.Validators.RoundsVotes[round]
 	roundVote := roundVotes[row-1]
 	text := roundVote.Serialize(d.DisableEmojis)
 
@@ -67,4 +74,8 @@ func (d *AllRoundsTableData) GetColumnCount() int {
 
 func (d *AllRoundsTableData) SetValidators(validators types.ValidatorsWithInfoAndAllRoundVotes) {
 	d.Validators = validators
+}
+
+func (d *AllRoundsTableData) SetTranspose(transpose bool) {
+	d.Transpose = transpose
 }
