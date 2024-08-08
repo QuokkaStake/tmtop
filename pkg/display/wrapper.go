@@ -62,7 +62,7 @@ func NewWrapper(
 	appVersion string,
 ) *Wrapper {
 	lastRoundTableData := NewLastRoundTableData(DefaultColumnsCount, config.DisableEmojis, false)
-	allRoundsTableData := NewAllRoundsTableData(config.DisableEmojis)
+	allRoundsTableData := NewAllRoundsTableData(config.DisableEmojis, false)
 
 	helpTextBytes, _ := static.TemplatesFs.ReadFile("help.txt")
 	helpText := strings.ReplaceAll(string(helpTextBytes), "{{ Version }}", appVersion)
@@ -164,6 +164,7 @@ func (w *Wrapper) Start() {
 		if event.Rune() == 't' {
 			w.Transpose = !w.Transpose
 			w.LastRoundTableData.SetTranspose(w.Transpose)
+			w.AllRoundsTableData.SetTranspose(w.Transpose)
 		}
 
 		if event.Rune() == 'p' {
