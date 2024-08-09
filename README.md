@@ -140,6 +140,12 @@ A: Verify you have a correct `--consumer-chain-id` specified.
 
 In theory, it should work on any Tendermint-based network with any node that has its RPC accessible.
 
+For cosmos-sdk chains, it should also allow displaying the upgrade info and the validators list.
+
+For non cosmos-sdk chains, it can also display this data given the chain implements the wrapper
+that returns the data in cosmos-sdk LCD compatible format (namely, validators list endpoint and upgrade plan one),
+`--chain-type cosmos-lcd` is used and the correct LCD path is provided.
+
 ## How can I contribute?
 
 Bug reports and feature requests are always welcome! If you want to contribute, feel free to open issues or PRs.

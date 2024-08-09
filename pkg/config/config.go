@@ -76,7 +76,7 @@ func (c Config) Validate() error {
 	}
 
 	if c.ChainType == ChainTypeCosmosLCD && c.LCDHost == "" {
-		return errors.New("chain-type is 'cosmos-lcd', but lcd-node is not set")
+		return errors.New("chain-type is 'cosmos-lcd', but lcd-host is not set")
 	}
 
 	return nil
