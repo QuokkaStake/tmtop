@@ -29,11 +29,11 @@ func NewAllRoundsTableData(disableEmojis bool, transpose bool) *AllRoundsTableDa
 }
 
 func (d *AllRoundsTableData) GetCell(row, column int) *tview.TableCell {
-	if len(d.cells) < row {
+	if len(d.cells) <= row {
 		return nil
 	}
 
-	if len(d.cells[row]) < column {
+	if len(d.cells[row]) <= column {
 		return nil
 	}
 
