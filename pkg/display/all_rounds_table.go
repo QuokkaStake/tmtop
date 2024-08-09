@@ -72,7 +72,7 @@ func (d *AllRoundsTableData) redrawCells() {
 	for row := 0; row < len(d.Validators.Validators)+1; row++ {
 		d.cells[row] = make([]*tview.TableCell, len(d.Validators.RoundsVotes))
 
-		for column := 0; column < len(d.Validators.RoundsVotes); column++ {
+		for column := 0; column < len(d.Validators.RoundsVotes)+1; column++ {
 			round := column - 1
 			if d.Transpose {
 				round = len(d.Validators.RoundsVotes) - column
