@@ -40,6 +40,14 @@ func (d *LastRoundTableData) SetTranspose(transpose bool) {
 }
 
 func (d *LastRoundTableData) GetCell(row, column int) *tview.TableCell {
+	if len(d.cells) < row {
+		return nil
+	}
+
+	if len(d.cells[row]) < column {
+		return nil
+	}
+
 	return d.cells[row][column]
 }
 
