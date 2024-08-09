@@ -23,6 +23,25 @@ type RoundVote struct {
 	IsProposer bool
 }
 
+func (v RoundVote) Equals(other RoundVote) bool {
+	if v.Address != other.Address {
+		return false
+	}
+
+	if v.Prevote != other.Prevote {
+		return false
+	}
+
+	if v.Precommit != other.Precommit {
+		return false
+	}
+
+	if v.IsProposer != other.IsProposer {
+		return false
+	}
+
+	return false
+}
 func (v RoundVote) Serialize(disableEmojis bool) string {
 	return fmt.Sprintf(
 		" %s %s",
@@ -201,6 +220,20 @@ type ValidatorsWithInfoAndAllRoundVotes struct {
 func (v ValidatorsWithInfoAndAllRoundVotes) Equals(other ValidatorsWithInfoAndAllRoundVotes) bool {
 	if len(v.RoundsVotes) != len(other.RoundsVotes) {
 		return false
+	}
+
+	for index, roundsVotes := range v.RoundsVotes {
+		otherRoundsVotes := other.RoundsVotes[index]
+		if len(roundsVotes) != len(otherRoundsVotes) {
+			return false
+		}
+
+		for innerIndex, roundVotes := range roundsVotes {
+			otherRoundVotes := otherRoundsVotes[innerIndex]
+			if roundVotes.Equals(otherRoundVotes) {
+				return false
+			}
+		}
 	}
 
 	if len(v.Validators) != len(other.Validators) {
