@@ -2,6 +2,7 @@ package display
 
 import (
 	"main/pkg/types"
+	"sync"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -16,6 +17,7 @@ type LastRoundTableData struct {
 	Transpose     bool
 
 	cells [][]*tview.TableCell
+	mutex sync.Mutex
 }
 
 func NewLastRoundTableData(columnsCount int, disableEmojis bool, transpose bool) *LastRoundTableData {
@@ -40,6 +42,9 @@ func (d *LastRoundTableData) SetTranspose(transpose bool) {
 }
 
 func (d *LastRoundTableData) GetCell(row, column int) *tview.TableCell {
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
+
 	if len(d.cells) <= row {
 		return nil
 	}
@@ -52,10 +57,16 @@ func (d *LastRoundTableData) GetCell(row, column int) *tview.TableCell {
 }
 
 func (d *LastRoundTableData) GetRowCount() int {
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
+
 	return len(d.cells)
 }
 
 func (d *LastRoundTableData) GetColumnCount() int {
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
+
 	if len(d.cells) == 0 {
 		return 0
 	}
@@ -69,6 +80,9 @@ func (d *LastRoundTableData) SetValidators(validators types.ValidatorsWithInfo) 
 }
 
 func (d *LastRoundTableData) redrawData() {
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
+
 	rowsCount := len(d.Validators)/d.ColumnsCount + 1
 	if len(d.Validators)%d.ColumnsCount == 0 {
 		rowsCount = len(d.Validators) / d.ColumnsCount

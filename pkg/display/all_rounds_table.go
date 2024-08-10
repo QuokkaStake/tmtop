@@ -3,6 +3,7 @@ package display
 import (
 	"main/pkg/types"
 	"strconv"
+	"sync"
 
 	"github.com/gdamore/tcell/v2"
 
@@ -17,6 +18,7 @@ type AllRoundsTableData struct {
 	Transpose     bool
 
 	cells [][]*tview.TableCell
+	mutex sync.Mutex
 }
 
 func NewAllRoundsTableData(disableEmojis bool, transpose bool) *AllRoundsTableData {
@@ -29,6 +31,9 @@ func NewAllRoundsTableData(disableEmojis bool, transpose bool) *AllRoundsTableDa
 }
 
 func (d *AllRoundsTableData) GetCell(row, column int) *tview.TableCell {
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
+
 	if len(d.cells) <= row {
 		return nil
 	}
@@ -41,10 +46,16 @@ func (d *AllRoundsTableData) GetCell(row, column int) *tview.TableCell {
 }
 
 func (d *AllRoundsTableData) GetRowCount() int {
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
+
 	return len(d.cells)
 }
 
 func (d *AllRoundsTableData) GetColumnCount() int {
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
+
 	if len(d.cells) == 0 {
 		return 0
 	}
@@ -67,6 +78,9 @@ func (d *AllRoundsTableData) SetTranspose(transpose bool) {
 }
 
 func (d *AllRoundsTableData) redrawCells() {
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
+
 	d.cells = make([][]*tview.TableCell, len(d.Validators.Validators)+1)
 
 	for row := 0; row < len(d.Validators.Validators)+1; row++ {
