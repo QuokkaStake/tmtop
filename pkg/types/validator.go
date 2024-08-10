@@ -23,6 +23,25 @@ type RoundVote struct {
 	IsProposer bool
 }
 
+func (v RoundVote) Equals(other RoundVote) bool {
+	if v.Address != other.Address {
+		return false
+	}
+
+	if v.Prevote != other.Prevote {
+		return false
+	}
+
+	if v.Precommit != other.Precommit {
+		return false
+	}
+
+	if v.IsProposer != other.IsProposer {
+		return false
+	}
+
+	return false
+}
 func (v RoundVote) Serialize(disableEmojis bool) string {
 	return fmt.Sprintf(
 		" %s %s",
@@ -136,6 +155,46 @@ type ValidatorWithChainValidator struct {
 	ChainValidator *ChainValidator
 }
 
+func (v ValidatorWithChainValidator) Equals(other ValidatorWithChainValidator) bool {
+	if v.Validator.Index != other.Validator.Index {
+		return false
+	}
+
+	if v.Validator.Address != other.Validator.Address {
+		return false
+	}
+
+	if v.Validator.VotingPowerPercent.Cmp(other.Validator.VotingPowerPercent) != 0 {
+		return false
+	}
+
+	if v.Validator.VotingPower.Cmp(other.Validator.VotingPower) != 0 {
+		return false
+	}
+
+	if (v.ChainValidator == nil) != (other.ChainValidator == nil) {
+		return false
+	}
+
+	if v.ChainValidator == nil && other.ChainValidator == nil {
+		return true
+	}
+
+	if v.ChainValidator.Moniker != other.ChainValidator.Moniker {
+		return false
+	}
+
+	if v.ChainValidator.Address != other.ChainValidator.Address {
+		return false
+	}
+
+	if v.ChainValidator.AssignedAddress != other.ChainValidator.AssignedAddress {
+		return false
+	}
+
+	return true
+}
+
 func (v ValidatorWithChainValidator) Serialize() string {
 	name := v.Validator.Address
 	if v.ChainValidator != nil {
@@ -156,4 +215,36 @@ func (v ValidatorWithChainValidator) Serialize() string {
 type ValidatorsWithInfoAndAllRoundVotes struct {
 	Validators  []ValidatorWithChainValidator
 	RoundsVotes []RoundVotes
+}
+
+func (v ValidatorsWithInfoAndAllRoundVotes) Equals(other ValidatorsWithInfoAndAllRoundVotes) bool {
+	if len(v.RoundsVotes) != len(other.RoundsVotes) {
+		return false
+	}
+
+	for index, roundsVotes := range v.RoundsVotes {
+		otherRoundsVotes := other.RoundsVotes[index]
+		if len(roundsVotes) != len(otherRoundsVotes) {
+			return false
+		}
+
+		for innerIndex, roundVotes := range roundsVotes {
+			otherRoundVotes := otherRoundsVotes[innerIndex]
+			if roundVotes.Equals(otherRoundVotes) {
+				return false
+			}
+		}
+	}
+
+	if len(v.Validators) != len(other.Validators) {
+		return false
+	}
+
+	for index, validator := range v.Validators {
+		if !validator.Equals(other.Validators[index]) {
+			return false
+		}
+	}
+
+	return true
 }
