@@ -1,6 +1,7 @@
 package display
 
 import (
+	"fmt"
 	"main/pkg/types"
 	"sync"
 
@@ -11,10 +12,11 @@ import (
 type LastRoundTableData struct {
 	tview.TableContentReadOnly
 
-	Validators    types.ValidatorsWithInfo
-	ColumnsCount  int
-	DisableEmojis bool
-	Transpose     bool
+	Validators     types.ValidatorsWithInfo
+	ConsensusError error
+	ColumnsCount   int
+	DisableEmojis  bool
+	Transpose      bool
 
 	cells [][]*tview.TableCell
 	mutex sync.Mutex
@@ -74,14 +76,24 @@ func (d *LastRoundTableData) GetColumnCount() int {
 	return len(d.cells[0])
 }
 
-func (d *LastRoundTableData) SetValidators(validators types.ValidatorsWithInfo) {
+func (d *LastRoundTableData) SetValidators(validators types.ValidatorsWithInfo, consensusError error) {
 	d.Validators = validators
+	d.ConsensusError = consensusError
 	d.redrawData()
 }
 
 func (d *LastRoundTableData) redrawData() {
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
+
+	if d.ConsensusError != nil {
+		d.cells = [][]*tview.TableCell{
+			{
+				tview.NewTableCell(fmt.Sprintf(" Error fetching consensus: %s", d.ConsensusError)),
+			},
+		}
+		return
+	}
 
 	rowsCount := len(d.Validators)/d.ColumnsCount + 1
 	if len(d.Validators)%d.ColumnsCount == 0 {
