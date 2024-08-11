@@ -18,6 +18,12 @@ type State struct {
 	StartTime                    time.Time
 	Upgrade                      *Upgrade
 	BlockTime                    time.Duration
+
+	ConsensusStateError  error
+	ValidatorsError      error
+	ChainValidatorsError error
+	UpgradePlanError     error
+	ChainInfoError       error
 }
 
 func NewState() *State {
@@ -76,7 +82,27 @@ func (s *State) SetBlockTime(blockTime time.Duration) {
 	s.BlockTime = blockTime
 }
 
+func (s *State) SetConsensusStateError(err error) {
+	s.ConsensusStateError = err
+}
+
+func (s *State) SetValidatorsError(err error) {
+	s.ValidatorsError = err
+}
+
+func (s *State) SetUpgradePlanError(err error) {
+	s.UpgradePlanError = err
+}
+
+func (s *State) SetChainInfoError(err error) {
+	s.ChainInfoError = err
+}
+
 func (s *State) SerializeConsensus() string {
+	if s.ConsensusStateError != nil {
+		return fmt.Sprintf(" consensus state error: %s", s.ConsensusStateError)
+	}
+
 	if s.Validators == nil {
 		return ""
 	}
@@ -141,20 +167,22 @@ func (s *State) SerializeConsensus() string {
 }
 
 func (s *State) SerializeChainInfo() string {
-	if s.ChainInfo == nil {
-		return ""
-	}
-
 	var sb strings.Builder
 
-	sb.WriteString(fmt.Sprintf(" chain name: %s\n", s.ChainInfo.NodeInfo.Network))
-	sb.WriteString(fmt.Sprintf(" tendermint version: v%s\n", s.ChainInfo.NodeInfo.Version))
+	if s.ChainInfoError != nil {
+		sb.WriteString(fmt.Sprintf(" chain info fetch error: %s\n", s.ChainInfoError.Error()))
+	} else if s.ChainInfo != nil {
+		sb.WriteString(fmt.Sprintf(" chain name: %s\n", s.ChainInfo.NodeInfo.Network))
+		sb.WriteString(fmt.Sprintf(" tendermint version: v%s\n", s.ChainInfo.NodeInfo.Version))
 
-	if s.BlockTime != 0 {
-		sb.WriteString(fmt.Sprintf(" avg block time: %s\n", utils.SerializeDuration(s.BlockTime)))
+		if s.BlockTime != 0 {
+			sb.WriteString(fmt.Sprintf(" avg block time: %s\n", utils.SerializeDuration(s.BlockTime)))
+		}
 	}
 
-	if s.Upgrade == nil {
+	if s.UpgradePlanError != nil {
+		sb.WriteString(fmt.Sprintf(" upgrade plan fetch error: %s\n", s.UpgradePlanError))
+	} else if s.Upgrade == nil {
 		sb.WriteString(" no chain upgrade scheduled\n")
 	} else {
 		sb.WriteString(s.SerializeUpgradeInfo())

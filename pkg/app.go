@@ -80,16 +80,22 @@ func (a *App) RefreshConsensus() {
 	}
 
 	consensus, validators, err := a.Aggregator.GetData()
+	a.State.SetConsensusStateError(err)
 	if err != nil {
 		a.Logger.Error().Err(err).Msg("Error getting consensus data")
+		a.DisplayWrapper.SetState(a.State)
 		return
 	}
 
 	err = a.State.SetTendermintResponse(consensus, validators)
+	a.State.SetConsensusStateError(err)
 	if err != nil {
 		a.Logger.Error().Err(err).Msg("Error converting data")
+		a.DisplayWrapper.SetState(a.State)
 		return
 	}
+
+	a.State.SetConsensusStateError(err)
 	a.DisplayWrapper.SetState(a.State)
 }
 
@@ -116,6 +122,7 @@ func (a *App) RefreshValidators() {
 
 	chainValidators, err := a.Aggregator.GetChainValidators()
 	if err != nil {
+		a.DisplayWrapper.SetState(a.State)
 		a.Logger.Error().Err(err).Msg("Error getting chain validators")
 		return
 	}
@@ -148,10 +155,13 @@ func (a *App) RefreshChainInfo() {
 	chainInfo, err := a.Aggregator.GetChainInfo()
 	if err != nil {
 		a.Logger.Error().Err(err).Msg("Error getting chain validators")
+		a.State.SetChainInfoError(err)
+		a.DisplayWrapper.SetState(a.State)
 		return
 	}
 
 	a.State.SetChainInfo(&chainInfo.Result)
+	a.State.SetChainInfoError(err)
 	a.DisplayWrapper.SetState(a.State)
 }
 
@@ -190,10 +200,13 @@ func (a *App) RefreshUpgrade() {
 	upgrade, err := a.Aggregator.GetUpgrade()
 	if err != nil {
 		a.Logger.Error().Err(err).Msg("Error getting upgrade")
+		a.State.SetUpgradePlanError(err)
+		a.DisplayWrapper.SetState(a.State)
 		return
 	}
 
 	a.State.SetUpgrade(upgrade)
+	a.State.SetUpgradePlanError(err)
 	a.DisplayWrapper.SetState(a.State)
 }
 

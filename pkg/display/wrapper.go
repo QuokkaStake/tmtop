@@ -216,7 +216,7 @@ func (w *Wrapper) ToggleHelp() {
 }
 
 func (w *Wrapper) SetState(state *types.State) {
-	w.LastRoundTableData.SetValidators(state.GetValidatorsWithInfo())
+	w.LastRoundTableData.SetValidators(state.GetValidatorsWithInfo(), state.ConsensusStateError)
 	w.AllRoundsTableData.SetValidators(state.GetValidatorsWithInfoAndAllRoundVotes())
 
 	w.ConsensusInfoTextView.Clear()
