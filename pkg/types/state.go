@@ -171,6 +171,32 @@ func (s *State) SerializeUpgradeInfo() string {
 		return sb.String()
 	}
 
+	if s.Upgrade.Height+1 < s.Height {
+		sb.WriteString(fmt.Sprintf(
+			" chain upgrade %s applied at block %d\n",
+			s.Upgrade.Name,
+			s.Upgrade.Height,
+		))
+
+		sb.WriteString(fmt.Sprintf(
+			" blocks since upgrade: %d\n",
+			s.Height-s.Upgrade.Height,
+		))
+
+		if s.BlockTime == 0 {
+			return sb.String()
+		}
+
+		upgradeTime := utils.CalculateTimeTillBlock(s.Height, s.Upgrade.Height, s.BlockTime)
+		sb.WriteString(fmt.Sprintf(
+			" time since upgrade: %s\n",
+			utils.SerializeDuration(time.Since(upgradeTime)),
+		))
+
+		sb.WriteString(fmt.Sprintf(" upgrade approximate time: %s\n", utils.SerializeTime(upgradeTime)))
+		return sb.String()
+	}
+
 	sb.WriteString(fmt.Sprintf(
 		" chain upgrade %s scheduled at block %d\n",
 		s.Upgrade.Name,
