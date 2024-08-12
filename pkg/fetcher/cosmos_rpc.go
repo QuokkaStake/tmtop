@@ -30,7 +30,7 @@ import (
 )
 
 type CosmosRPCDataFetcher struct {
-	Config         configPkg.Config
+	Config         *configPkg.Config
 	Logger         zerolog.Logger
 	Client         *http.Client
 	ProviderClient *http.Client
@@ -40,7 +40,7 @@ type CosmosRPCDataFetcher struct {
 	TxDecoder  sdkTypes.TxDecoder
 }
 
-func NewCosmosRPCDataFetcher(config configPkg.Config, logger zerolog.Logger) *CosmosRPCDataFetcher {
+func NewCosmosRPCDataFetcher(config *configPkg.Config, logger zerolog.Logger) *CosmosRPCDataFetcher {
 	interfaceRegistry := codecTypes.NewInterfaceRegistry()
 	std.RegisterInterfaces(interfaceRegistry)
 	stakingTypes.RegisterInterfaces(interfaceRegistry) // for MsgCreateValidator for gentx parsing

@@ -56,7 +56,7 @@ type Wrapper struct {
 }
 
 func NewWrapper(
-	config configPkg.Config,
+	config *configPkg.Config,
 	logger zerolog.Logger,
 	pauseChannel chan bool,
 	appVersion string,

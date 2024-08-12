@@ -15,13 +15,13 @@ import (
 )
 
 type RPC struct {
-	Config     configPkg.Config
+	Config     *configPkg.Config
 	Logger     zerolog.Logger
 	Client     *http.Client
 	LogChannel chan string
 }
 
-func NewRPC(config configPkg.Config, logger zerolog.Logger) *RPC {
+func NewRPC(config *configPkg.Config, logger zerolog.Logger) *RPC {
 	return &RPC{
 		Config: config,
 		Logger: logger.With().Str("component", "tendermint_rpc").Logger(),

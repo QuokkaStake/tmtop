@@ -12,7 +12,7 @@ type DataFetcher interface {
 	GetUpgradePlan() (*types.Upgrade, error)
 }
 
-func GetDataFetcher(config configPkg.Config, logger zerolog.Logger) DataFetcher {
+func GetDataFetcher(config *configPkg.Config, logger zerolog.Logger) DataFetcher {
 	if config.ChainType == "tendermint" {
 		return NewNoopDataFetcher()
 	}
