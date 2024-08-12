@@ -14,7 +14,7 @@ import (
 type App struct {
 	Logger         zerolog.Logger
 	Version        string
-	Config         configPkg.Config
+	Config         *configPkg.Config
 	Aggregator     *aggregator.Aggregator
 	DisplayWrapper *display.Wrapper
 	State          *types.State
@@ -24,7 +24,7 @@ type App struct {
 	IsPaused     bool
 }
 
-func NewApp(config configPkg.Config, version string) *App {
+func NewApp(config *configPkg.Config, version string) *App {
 	logChannel := make(chan string)
 	pauseChannel := make(chan bool)
 

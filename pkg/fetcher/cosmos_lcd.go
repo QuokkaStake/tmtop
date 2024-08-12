@@ -15,7 +15,7 @@ import (
 )
 
 type CosmosLcdDataFetcher struct {
-	Config configPkg.Config
+	Config *configPkg.Config
 	Logger zerolog.Logger
 	Client *http.Client
 
@@ -24,7 +24,7 @@ type CosmosLcdDataFetcher struct {
 	LegacyAmino *codec.LegacyAmino
 }
 
-func NewCosmosLcdDataFetcher(config configPkg.Config, logger zerolog.Logger) *CosmosLcdDataFetcher {
+func NewCosmosLcdDataFetcher(config *configPkg.Config, logger zerolog.Logger) *CosmosLcdDataFetcher {
 	interfaceRegistry := codecTypes.NewInterfaceRegistry()
 	std.RegisterInterfaces(interfaceRegistry)
 	parseCodec := codec.NewProtoCodec(interfaceRegistry)

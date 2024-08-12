@@ -19,7 +19,7 @@ type Writer struct {
 	LogChannel chan string
 }
 
-func NewWriter(logChannel chan string, config configPkg.Config) Writer {
+func NewWriter(logChannel chan string, config *configPkg.Config) Writer {
 	writer := Writer{
 		LogChannel: logChannel,
 	}
@@ -48,7 +48,7 @@ func (w Writer) Write(msg []byte) (int, error) {
 	return len(msg), nil
 }
 
-func GetLogger(logChannel chan string, config configPkg.Config) *zerolog.Logger {
+func GetLogger(logChannel chan string, config *configPkg.Config) *zerolog.Logger {
 	writer := zerolog.ConsoleWriter{
 		Out:     NewWriter(logChannel, config),
 		NoColor: true,

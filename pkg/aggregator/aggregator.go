@@ -12,14 +12,14 @@ import (
 )
 
 type Aggregator struct {
-	Config configPkg.Config
+	Config *configPkg.Config
 	Logger zerolog.Logger
 
 	TendermintClient *tendermint.RPC
 	DataFetcher      dataFetcher.DataFetcher
 }
 
-func NewAggregator(config configPkg.Config, logger zerolog.Logger) *Aggregator {
+func NewAggregator(config *configPkg.Config, logger zerolog.Logger) *Aggregator {
 	return &Aggregator{
 		Config:           config,
 		Logger:           logger.With().Str("component", "aggregator").Logger(),
