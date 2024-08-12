@@ -98,7 +98,7 @@ func (s *State) SetChainInfoError(err error) {
 	s.ChainInfoError = err
 }
 
-func (s *State) SerializeConsensus() string {
+func (s *State) SerializeConsensus(timezone *time.Location) string {
 	if s.ConsensusStateError != nil {
 		return fmt.Sprintf(" consensus state error: %s", s.ConsensusStateError)
 	}
@@ -113,7 +113,7 @@ func (s *State) SerializeConsensus() string {
 	sb.WriteString(fmt.Sprintf(
 		" block time: %s (%s)\n",
 		utils.ZeroOrPositiveDuration(utils.SerializeDuration(time.Since(s.StartTime))),
-		utils.SerializeTime(s.StartTime),
+		utils.SerializeTime(s.StartTime.In(timezone)),
 	))
 	sb.WriteString(fmt.Sprintf(
 		" prevote consensus (total/agreeing): %.2f / %.2f\n",
@@ -161,12 +161,12 @@ func (s *State) SerializeConsensus() string {
 		len(*s.Validators),
 	))
 
-	sb.WriteString(fmt.Sprintf(" last updated at: %s\n", utils.SerializeTime(time.Now())))
+	sb.WriteString(fmt.Sprintf(" last updated at: %s\n", utils.SerializeTime(time.Now().In(timezone))))
 
 	return sb.String()
 }
 
-func (s *State) SerializeChainInfo() string {
+func (s *State) SerializeChainInfo(timezone *time.Location) string {
 	var sb strings.Builder
 
 	if s.ChainInfoError != nil {
@@ -185,13 +185,13 @@ func (s *State) SerializeChainInfo() string {
 	} else if s.Upgrade == nil {
 		sb.WriteString(" no chain upgrade scheduled\n")
 	} else {
-		sb.WriteString(s.SerializeUpgradeInfo())
+		sb.WriteString(s.SerializeUpgradeInfo(timezone))
 	}
 
 	return sb.String()
 }
 
-func (s *State) SerializeUpgradeInfo() string {
+func (s *State) SerializeUpgradeInfo(timezone *time.Location) string {
 	var sb strings.Builder
 
 	if s.Upgrade.Height+1 == s.Height {
@@ -221,7 +221,7 @@ func (s *State) SerializeUpgradeInfo() string {
 			utils.SerializeDuration(time.Since(upgradeTime)),
 		))
 
-		sb.WriteString(fmt.Sprintf(" upgrade approximate time: %s\n", utils.SerializeTime(upgradeTime)))
+		sb.WriteString(fmt.Sprintf(" upgrade approximate time: %s\n", utils.SerializeTime(upgradeTime.In(timezone))))
 		return sb.String()
 	}
 
@@ -247,7 +247,7 @@ func (s *State) SerializeUpgradeInfo() string {
 		utils.SerializeDuration(time.Until(upgradeTime)),
 	))
 
-	sb.WriteString(fmt.Sprintf(" upgrade estimated time: %s\n", utils.SerializeTime(upgradeTime)))
+	sb.WriteString(fmt.Sprintf(" upgrade estimated time: %s\n", utils.SerializeTime(upgradeTime.In(timezone))))
 
 	return sb.String()
 }

@@ -6,6 +6,7 @@ import (
 	"main/pkg/types"
 	"main/static"
 	"strings"
+	"time"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -53,6 +54,7 @@ type Wrapper struct {
 
 	DisableEmojis bool
 	Transpose     bool
+	Timezone      *time.Location
 }
 
 func NewWrapper(
@@ -128,6 +130,7 @@ func NewWrapper(
 		IsHelpDisplayed:       false,
 		DisableEmojis:         config.DisableEmojis,
 		Transpose:             false,
+		Timezone:              config.Timezone,
 	}
 }
 
@@ -222,8 +225,8 @@ func (w *Wrapper) SetState(state *types.State) {
 	w.ConsensusInfoTextView.Clear()
 	w.ChainInfoTextView.Clear()
 	w.ProgressTextView.Clear()
-	_, _ = fmt.Fprint(w.ConsensusInfoTextView, state.SerializeConsensus())
-	_, _ = fmt.Fprint(w.ChainInfoTextView, state.SerializeChainInfo())
+	_, _ = fmt.Fprint(w.ConsensusInfoTextView, state.SerializeConsensus(w.Timezone))
+	_, _ = fmt.Fprint(w.ChainInfoTextView, state.SerializeChainInfo(w.Timezone))
 
 	_, _, width, height := w.ConsensusInfoTextView.GetInnerRect()
 	_, _ = fmt.Fprint(w.ProgressTextView, state.SerializePrevotesProgressbar(width, height/2))
