@@ -1,7 +1,6 @@
 package fetcher
 
 import (
-	"errors"
 	"main/pkg/types"
 )
 
@@ -17,5 +16,5 @@ func (f *NoopDataFetcher) GetValidators() (*types.ChainValidators, error) {
 }
 
 func (f *NoopDataFetcher) GetUpgradePlan() (*types.Upgrade, error) {
-	return nil, errors.New("upgrade is not present")
+	return nil, nil
 }

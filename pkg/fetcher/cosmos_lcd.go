@@ -1,7 +1,6 @@
 package fetcher
 
 import (
-	"errors"
 	"fmt"
 	configPkg "main/pkg/config"
 	"main/pkg/http"
@@ -86,7 +85,7 @@ func (f *CosmosLcdDataFetcher) GetUpgradePlan() (*types.Upgrade, error) {
 	}
 
 	if response.Plan == nil {
-		return nil, errors.New("upgrade plan is not present")
+		return nil, nil
 	}
 
 	return &types.Upgrade{

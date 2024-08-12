@@ -40,3 +40,5 @@ linters:
     - dogsled
     - perfsprint
     - mnd
+    - nilnil
+    - execinquery
