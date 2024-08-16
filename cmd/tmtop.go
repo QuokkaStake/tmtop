@@ -55,6 +55,7 @@ func main() {
 	rootCmd.PersistentFlags().StringVar(&config.LCDHost, "lcd-host", "", "LCD API host URL")
 	rootCmd.PersistentFlags().StringVar(&config.DebugFile, "debug-file", "", "Path to file to write debug info/logs to")
 	rootCmd.PersistentFlags().Int64Var(&config.HaltHeight, "halt-height", 0, "Custom halt-height")
+	rootCmd.PersistentFlags().StringVar(&config.Timezone, "timezone", "", "Timezone to display dates in")
 
 	if err := rootCmd.Execute(); err != nil {
 		logger.GetDefaultLogger().Fatal().Err(err).Msg("Could not start application")

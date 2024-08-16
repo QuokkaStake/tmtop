@@ -21,6 +21,7 @@ type InputConfig struct {
 	DebugFile             string
 	HaltHeight            int64
 	LCDHost               string
+	Timezone              string
 }
 
 type ChainType string
@@ -65,6 +66,17 @@ func ParseAndValidateConfig(input InputConfig) (*Config, error) {
 		return nil, errors.New("chain-type is 'cosmos-lcd', but lcd-host is not set")
 	}
 
+	timezone := time.Local //nolint:gosmopolitan // local timezone is expected here
+
+	if input.Timezone != "" {
+		parsedTimezone, err := time.LoadLocation(input.Timezone)
+		if err != nil {
+			return nil, err
+		}
+
+		timezone = parsedTimezone
+	}
+
 	config := &Config{
 		RPCHost:               input.RPCHost,
 		ProviderRPCHost:       input.ProviderRPCHost,
@@ -80,6 +92,7 @@ func ParseAndValidateConfig(input InputConfig) (*Config, error) {
 		DebugFile:             input.DebugFile,
 		HaltHeight:            input.HaltHeight,
 		LCDHost:               input.LCDHost,
+		Timezone:              timezone,
 	}
 
 	return config, nil
@@ -100,6 +113,7 @@ type Config struct {
 	DebugFile             string
 	HaltHeight            int64
 	LCDHost               string
+	Timezone              *time.Location
 }
 
 func (c Config) GetProviderOrConsumerHost() string {
