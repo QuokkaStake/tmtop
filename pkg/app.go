@@ -59,6 +59,8 @@ func (a *App) Start() {
 }
 
 func (a *App) GoRefreshConsensus() {
+	defer a.HandlePanic()
+
 	a.RefreshConsensus()
 
 	ticker := time.NewTicker(a.Config.RefreshRate)
@@ -100,6 +102,8 @@ func (a *App) RefreshConsensus() {
 }
 
 func (a *App) GoRefreshValidators() {
+	defer a.HandlePanic()
+
 	a.RefreshValidators()
 
 	ticker := time.NewTicker(a.Config.ValidatorsRefreshRate)
@@ -132,6 +136,8 @@ func (a *App) RefreshValidators() {
 }
 
 func (a *App) GoRefreshChainInfo() {
+	defer a.HandlePanic()
+
 	a.RefreshChainInfo()
 
 	ticker := time.NewTicker(a.Config.ChainInfoRefreshRate)
@@ -166,6 +172,8 @@ func (a *App) RefreshChainInfo() {
 }
 
 func (a *App) GoRefreshUpgrade() {
+	defer a.HandlePanic()
+
 	a.RefreshUpgrade()
 
 	ticker := time.NewTicker(a.Config.UpgradeRefreshRate)
@@ -211,6 +219,8 @@ func (a *App) RefreshUpgrade() {
 }
 
 func (a *App) GoRefreshBlockTime() {
+	defer a.HandlePanic()
+
 	a.RefreshBlockTime()
 
 	ticker := time.NewTicker(a.Config.BlockTimeRefreshRate)
@@ -252,5 +262,12 @@ func (a *App) ListenForPause() {
 	for {
 		paused := <-a.PauseChannel
 		a.IsPaused = paused
+	}
+}
+
+func (a *App) HandlePanic() {
+	if r := recover(); r != nil {
+		a.DisplayWrapper.App.Stop()
+		panic(r)
 	}
 }
