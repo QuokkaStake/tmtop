@@ -146,9 +146,17 @@ func (rpc *RPC) GetBlockTime() (time.Duration, error) {
 			Msg("Error converting latest block height to int64, which should never happen.")
 		return 0, err
 	}
-	blockToCheck := latestBlockHeight - blocksBehind
+	olderBlockHeight := latestBlockHeight - blocksBehind
+	if olderBlockHeight <= 0 {
+		olderBlockHeight = 1
+	}
 
-	olderBlock, err := rpc.Block(blockToCheck)
+	blocksDiff := latestBlockHeight - olderBlockHeight
+	if blocksDiff <= 0 {
+		return 0, fmt.Errorf("cannot calculate block time with the negative blocks counter")
+	}
+
+	olderBlock, err := rpc.Block(olderBlockHeight)
 	if err != nil {
 		rpc.Logger.Error().Err(err).Msg("Could not fetch older block")
 		return 0, err
@@ -159,7 +167,7 @@ func (rpc *RPC) GetBlockTime() (time.Duration, error) {
 	}
 
 	blocksDiffTime := latestBlock.Result.Block.Header.Time.Sub(olderBlock.Result.Block.Header.Time)
-	blockTime := blocksDiffTime.Seconds() / float64(blocksBehind)
+	blockTime := blocksDiffTime.Seconds() / float64(blocksDiff)
 
 	duration := time.Duration(int64(blockTime * float64(time.Second)))
 	return duration, nil
