@@ -26,7 +26,16 @@ func NewClient(logger zerolog.Logger, invoker, host string) *Client {
 }
 
 func (c *Client) GetInternal(relativeURL string) (io.ReadCloser, error) {
-	client := &http.Client{Timeout: 300 * time.Second}
+	var transport http.RoundTripper
+
+	transportRaw, ok := http.DefaultTransport.(*http.Transport)
+	if ok {
+		transport = transportRaw.Clone()
+	} else {
+		transport = http.DefaultTransport
+	}
+
+	client := &http.Client{Timeout: 300 * time.Second, Transport: transport}
 	start := time.Now()
 
 	fullURL := fmt.Sprintf("%s%s", c.Host, relativeURL)
