@@ -20,13 +20,13 @@ import (
 	"github.com/cosmos/cosmos-sdk/std"
 	"github.com/rs/zerolog"
 
+	upgradeTypes "cosmossdk.io/x/upgrade/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codecTypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptoTypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	queryTypes "github.com/cosmos/cosmos-sdk/types/query"
 	stakingTypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-	upgradeTypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
-	providerTypes "github.com/cosmos/interchain-security/v4/x/ccv/provider/types"
+	providerTypes "github.com/cosmos/interchain-security/v6/x/ccv/provider/types"
 )
 
 type CosmosRPCDataFetcher struct {
@@ -113,7 +113,7 @@ func (f *CosmosRPCDataFetcher) ParseValidator(validator stakingTypes.Validator) 
 	return types.ChainValidator{
 		Moniker:    validator.GetMoniker(),
 		Address:    fmt.Sprintf("%X", addr),
-		RawAddress: addr.String(),
+		RawAddress: sdkTypes.ConsAddress(addr).String(),
 	}, nil
 }
 
@@ -151,13 +151,13 @@ func (f *CosmosRPCDataFetcher) GetValidators() (*types.ChainValidators, error) {
 		return &validators, nil
 	}
 
-	assignedKeysQuery := providerTypes.QueryAllPairsValConAddrByConsumerChainIDRequest{
-		ChainId: f.Config.ConsumerChainID,
+	assignedKeysQuery := providerTypes.QueryAllPairsValConsAddrByConsumerRequest{
+		ConsumerId: f.Config.ConsumerID,
 	}
 
-	var assignedKeysResponse providerTypes.QueryAllPairsValConAddrByConsumerChainIDResponse
+	var assignedKeysResponse providerTypes.QueryAllPairsValConsAddrByConsumerResponse
 	if err := f.AbciQuery(
-		"/interchain_security.ccv.provider.v1.Query/QueryAllPairsValConAddrByConsumerChainID",
+		"/interchain_security.ccv.provider.v1.Query/QueryAllPairsValConsAddrByConsumer",
 		&assignedKeysQuery,
 		&assignedKeysResponse,
 		f.ProviderClient,

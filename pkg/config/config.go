@@ -9,7 +9,7 @@ import (
 type InputConfig struct {
 	RPCHost               string
 	ProviderRPCHost       string
-	ConsumerChainID       string
+	ConsumerID            string
 	RefreshRate           time.Duration
 	ValidatorsRefreshRate time.Duration
 	ChainInfoRefreshRate  time.Duration
@@ -58,8 +58,8 @@ func ParseAndValidateConfig(input InputConfig) (*Config, error) {
 		return nil, err
 	}
 
-	if input.ProviderRPCHost != "" && input.ConsumerChainID == "" {
-		return nil, errors.New("chain is consumer, but consumer-chain-id is not set")
+	if input.ProviderRPCHost != "" && input.ConsumerID == "" {
+		return nil, errors.New("chain is consumer, but consumer-id is not set")
 	}
 
 	if chainType == ChainTypeCosmosLCD && input.LCDHost == "" {
@@ -80,7 +80,7 @@ func ParseAndValidateConfig(input InputConfig) (*Config, error) {
 	config := &Config{
 		RPCHost:               input.RPCHost,
 		ProviderRPCHost:       input.ProviderRPCHost,
-		ConsumerChainID:       input.ConsumerChainID,
+		ConsumerID:            input.ConsumerID,
 		RefreshRate:           input.RefreshRate,
 		ValidatorsRefreshRate: input.ValidatorsRefreshRate,
 		ChainInfoRefreshRate:  input.ChainInfoRefreshRate,
@@ -101,7 +101,7 @@ func ParseAndValidateConfig(input InputConfig) (*Config, error) {
 type Config struct {
 	RPCHost               string
 	ProviderRPCHost       string
-	ConsumerChainID       string
+	ConsumerID            string
 	RefreshRate           time.Duration
 	ValidatorsRefreshRate time.Duration
 	ChainInfoRefreshRate  time.Duration
