@@ -2,10 +2,11 @@ package fetcher
 
 import (
 	"fmt"
-	sdkTypes "github.com/cosmos/cosmos-sdk/types"
 	configPkg "main/pkg/config"
 	"main/pkg/http"
 	"main/pkg/types"
+
+	sdkTypes "github.com/cosmos/cosmos-sdk/types"
 
 	upgradeTypes "cosmossdk.io/x/upgrade/types"
 	"github.com/cosmos/cosmos-sdk/codec"

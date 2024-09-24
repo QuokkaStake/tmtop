@@ -42,3 +42,5 @@ linters:
     - mnd
     - nilnil
     - execinquery
+    - intrange
+    - exportloopref

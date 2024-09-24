@@ -68,8 +68,8 @@ func (f *CosmosRPCDataFetcher) GetProviderOrConsumerClient() *http.Client {
 
 func (f *CosmosRPCDataFetcher) AbciQuery(
 	method string,
-	message codec.ProtoMarshaler,
-	output codec.ProtoMarshaler,
+	message codec.ProtoMarshaler, //nolint:staticcheck
+	output codec.ProtoMarshaler, //nolint:staticcheck
 	client *http.Client,
 ) error {
 	dataBytes, err := message.Marshal()
