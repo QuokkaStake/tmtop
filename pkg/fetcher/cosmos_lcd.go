@@ -6,11 +6,13 @@ import (
 	"main/pkg/http"
 	"main/pkg/types"
 
+	sdkTypes "github.com/cosmos/cosmos-sdk/types"
+
+	upgradeTypes "cosmossdk.io/x/upgrade/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codecTypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/std"
 	stakingTypes "github.com/cosmos/cosmos-sdk/x/staking/types"
-	upgradeTypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 	"github.com/rs/zerolog"
 )
 
@@ -68,7 +70,7 @@ func (f *CosmosLcdDataFetcher) GetValidators() (*types.ChainValidators, error) {
 		validators[index] = types.ChainValidator{
 			Moniker:    validator.Description.Moniker,
 			Address:    fmt.Sprintf("%X", addr),
-			RawAddress: addr.String(),
+			RawAddress: sdkTypes.ConsAddress(addr).String(),
 		}
 	}
 

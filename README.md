@@ -70,8 +70,11 @@ you can try running it this way to fetch data from LCD (the `--lcd-host` paramet
 To run it for a Cosmos-based consumer chains (like Stride or Neutron),
 something like this should be enough:
 ```
-./tmtop <RPC host address> --provider-rpc-host <provider RPC host> --consumer-chain-id <consumer chain ID>
+./tmtop <RPC host address> --provider-rpc-host <provider RPC host> --consumer-id <consumer ID>
 ```
+
+(Keep in mind that consumer-id is not the same as consumer chain-id, you can get one
+from the output of `<appd> provider list-consumer-chains` under the `consumer_id` field.)
 
 There are more parameters to tweak, for all the possible arguments, see `./tmtop --help`.
 
@@ -134,7 +137,7 @@ Q: The app displays some monikers as hashes on a consumer chain.
 
 ![Telegram](https://raw.githubusercontent.com/QuokkaStake/tmtop/main/images/wrong-chain-id.jpg)
 
-A: Verify you have a correct `--consumer-chain-id` specified.
+A: Verify you have a correct `--consumer-id` specified.
 
 ## Which networks this is guaranteed to work?
 

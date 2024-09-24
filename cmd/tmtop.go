@@ -43,7 +43,7 @@ func main() {
 	}
 
 	rootCmd.PersistentFlags().StringVar(&config.ProviderRPCHost, "provider-rpc-host", "", "Provider chain RPC host URL")
-	rootCmd.PersistentFlags().StringVar(&config.ConsumerChainID, "consumer-chain-id", "", "Consumer chain ID")
+	rootCmd.PersistentFlags().StringVar(&config.ConsumerID, "consumer-id", "", "Consumer ID (not chain ID!)")
 	rootCmd.PersistentFlags().DurationVar(&config.RefreshRate, "refresh-rate", time.Second, "Refresh rate")
 	rootCmd.PersistentFlags().BoolVar(&config.Verbose, "verbose", false, "Display more debug logs")
 	rootCmd.PersistentFlags().BoolVar(&config.DisableEmojis, "disable-emojis", false, "Disable emojis in output")
