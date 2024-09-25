@@ -74,7 +74,7 @@ something like this should be enough:
 ```
 
 (Keep in mind that consumer-id is not the same as consumer chain-id, you can get one
-from the output of `<appd> provider list-consumer-chains` under the `consumer_id` field.)
+from the output of `<appd> q provider list-consumer-chains` under the `client_id` field.)
 
 There are more parameters to tweak, for all the possible arguments, see `./tmtop --help`.
 
