@@ -127,8 +127,6 @@ func (rpc *RPC) Block(height int64) (types.TendermintBlockResponse, error) {
 }
 
 func (rpc *RPC) GetBlockTime() (time.Duration, error) {
-	var blocksBehind int64 = 1000
-
 	latestBlock, err := rpc.Block(0)
 	if err != nil {
 		rpc.Logger.Error().Err(err).Msg("Could not fetch current block")
@@ -146,7 +144,7 @@ func (rpc *RPC) GetBlockTime() (time.Duration, error) {
 			Msg("Error converting latest block height to int64, which should never happen.")
 		return 0, err
 	}
-	olderBlockHeight := latestBlockHeight - blocksBehind
+	olderBlockHeight := latestBlockHeight - int64(rpc.Config.BlocksBehind)
 	if olderBlockHeight <= 0 {
 		olderBlockHeight = 1
 	}
