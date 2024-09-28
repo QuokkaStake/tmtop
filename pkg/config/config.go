@@ -20,6 +20,7 @@ type InputConfig struct {
 	DisableEmojis         bool
 	DebugFile             string
 	HaltHeight            int64
+	BlocksBehind          uint64
 	LCDHost               string
 	Timezone              string
 }
@@ -66,6 +67,10 @@ func ParseAndValidateConfig(input InputConfig) (*Config, error) {
 		return nil, errors.New("chain-type is 'cosmos-lcd', but lcd-host is not set")
 	}
 
+	if input.BlocksBehind <= 0 {
+		return nil, errors.New("cannot run with a negative blocks-behind")
+	}
+
 	timezone := time.Local //nolint:gosmopolitan // local timezone is expected here
 
 	if input.Timezone != "" {
@@ -91,6 +96,7 @@ func ParseAndValidateConfig(input InputConfig) (*Config, error) {
 		DisableEmojis:         input.DisableEmojis,
 		DebugFile:             input.DebugFile,
 		HaltHeight:            input.HaltHeight,
+		BlocksBehind:          input.BlocksBehind,
 		LCDHost:               input.LCDHost,
 		Timezone:              timezone,
 	}
@@ -112,6 +118,7 @@ type Config struct {
 	DisableEmojis         bool
 	DebugFile             string
 	HaltHeight            int64
+	BlocksBehind          uint64
 	LCDHost               string
 	Timezone              *time.Location
 }
