@@ -196,9 +196,12 @@ func (w *Wrapper) Start() {
 	_, _ = fmt.Fprint(w.ConsensusInfoTextView, "Loading...")
 	_, _ = fmt.Fprint(w.ProgressTextView, "Loading...")
 
-	w.App.SetBeforeDrawFunc(func(screen tcell.Screen) bool {
-		screen.Clear()
-		return false
+	w.App.SetAfterDrawFunc(func(screen tcell.Screen) {
+		_, _, width, _ := w.LastRoundTable.GetInnerRect()
+		columns := width / 50
+		w.LastRoundTableData.SetColumnsCount(columns)
+
+		w.App.SetAfterDrawFunc(nil)
 	})
 
 	if err := w.App.Run(); err != nil {
