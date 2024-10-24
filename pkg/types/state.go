@@ -3,6 +3,7 @@ package types
 import (
 	"fmt"
 	"main/pkg/utils"
+	"math/big"
 	"strings"
 	"time"
 )
@@ -126,39 +127,59 @@ func (s *State) SerializeConsensus(timezone *time.Location) string {
 		s.Validators.GetTotalVotingPowerPrecommittedPercent(false),
 	))
 
-	prevoted := 0
-	precommitted := 0
-	prevotedAgreed := 0
-	precommittedAgreed := 0
+	var (
+		prevoted           *big.Float = big.NewFloat(0)
+		precommitted       *big.Float = big.NewFloat(0)
+		prevotedAgreed     *big.Float = big.NewFloat(0)
+		precommittedAgreed *big.Float = big.NewFloat(0)
+	)
 
 	for _, validator := range *s.Validators {
+		// keeps round alive, didn't see valid proposal (tendermint layer)
 		if validator.RoundVote.Prevote != VotedNil {
-			prevoted += 1
+			prevoted = big.NewFloat(0).Add(prevoted, validator.Validator.VotingPowerPercent)
 		}
 		if validator.RoundVote.Precommit != VotedNil {
-			precommitted += 1
+			precommitted = big.NewFloat(0).Add(precommitted, validator.Validator.VotingPowerPercent)
 		}
 
+		// could restart/end the round (cosmos layer) -- “non-locked” or “no-precommit”
 		if validator.RoundVote.Prevote == Voted {
-			prevotedAgreed += 1
+			prevotedAgreed = big.NewFloat(0).Add(prevotedAgreed, validator.Validator.VotingPowerPercent)
 		}
 
 		if validator.RoundVote.Precommit == Voted {
-			precommittedAgreed += 1
+			precommittedAgreed = big.NewFloat(0).Add(precommittedAgreed, validator.Validator.VotingPowerPercent)
 		}
+
+		// In summary, a **nil vote** reflects that the validator participated but
+		// saw no valid proposal, keeping the round alive, while a **zero vote**
+		// (if referenced) signals a form of abstention or absence of a decision,
+		// which could force the round to restart or timeout.
+	}
+
+	mustFloat := func(x *big.Float) float64 {
+		blah, _ := x.Float64()
+		return blah
 	}
 
 	sb.WriteString(fmt.Sprintf(
-		" prevoted/precommitted: %d/%d (out of %d)\n",
-		prevoted,
-		precommitted,
-		len(*s.Validators),
+		" prevoted/precommitted: %0.2f/%0.2f (out of %0.2f / %0.2f - %0.2f / %0.2f)\n",
+		mustFloat(prevoted),
+		mustFloat(precommitted),
+		mustFloat(s.Validators.GetTotalVotingPowerPrevotedPercent(true)),
+		mustFloat(s.Validators.GetTotalVotingPowerPrecommittedPercent(true)),
+		mustFloat(s.Validators.GetTotalVotingPowerPrevotedPercent(false)),
+		mustFloat(s.Validators.GetTotalVotingPowerPrecommittedPercent(false)),
 	))
 	sb.WriteString(fmt.Sprintf(
-		" prevoted/precommitted agreed: %d/%d (out of %d)\n",
-		prevotedAgreed,
-		precommittedAgreed,
-		len(*s.Validators),
+		" prevoted/precommitted agreed: %0.2f/%0.2f (out of %0.2f / %0.02f - %0.2f / %0.2f)\n",
+		mustFloat(prevotedAgreed),
+		mustFloat(precommittedAgreed),
+		mustFloat(s.Validators.GetTotalVotingPowerPrevotedPercent(true)),
+		mustFloat(s.Validators.GetTotalVotingPowerPrecommittedPercent(true)),
+		mustFloat(s.Validators.GetTotalVotingPowerPrevotedPercent(false)),
+		mustFloat(s.Validators.GetTotalVotingPowerPrecommittedPercent(false)),
 	))
 
 	sb.WriteString(fmt.Sprintf(" last updated at: %s\n", utils.SerializeTime(time.Now().In(timezone))))
