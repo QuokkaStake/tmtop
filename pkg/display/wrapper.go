@@ -16,6 +16,7 @@ import (
 const (
 	ModeLastRound = iota
 	ModeAllRounds = iota
+	ModeNetInfo   = iota
 )
 
 const (
@@ -34,6 +35,10 @@ type Wrapper struct {
 	LastRoundTableData    *LastRoundTableData
 	AllRoundsTable        *tview.Table
 	AllRoundsTableData    *AllRoundsTableData
+	NetInfoTable          *tview.Table
+	NetInfoTableData      *NetInfoTableData
+	RPCsTable             *tview.Table
+	RPCsTableData         *RPCsTableData
 	Grid                  *tview.Grid
 	Pages                 *tview.Pages
 	App                   *tview.Application
@@ -45,12 +50,14 @@ type Wrapper struct {
 
 	DebugEnabled bool
 
+	State  *types.State
 	Logger zerolog.Logger
 
 	PauseChannel chan bool
 	IsPaused     bool
 
-	IsHelpDisplayed bool
+	IsRPCListDisplayed bool
+	IsHelpDisplayed    bool
 
 	DisableEmojis bool
 	Transpose     bool
@@ -59,12 +66,15 @@ type Wrapper struct {
 
 func NewWrapper(
 	config *configPkg.Config,
+	state *types.State,
 	logger zerolog.Logger,
 	pauseChannel chan bool,
 	appVersion string,
 ) *Wrapper {
 	lastRoundTableData := NewLastRoundTableData(DefaultColumnsCount, config.DisableEmojis, false)
 	allRoundsTableData := NewAllRoundsTableData(config.DisableEmojis, false)
+	netInfoTableData := NewNetInfoTableData()
+	rpcsTableData := NewRPCsTableData()
 
 	helpTextBytes, _ := static.TemplatesFs.ReadFile("help.txt")
 	helpText := strings.ReplaceAll(string(helpTextBytes), "{{ Version }}", appVersion)
@@ -79,6 +89,20 @@ func NewWrapper(
 		SetSelectable(false, false).
 		SetContent(allRoundsTableData).
 		SetFixed(1, 1)
+
+	netInfoTable := tview.NewTable().
+		SetBorders(false).
+		SetSelectable(false, false).
+		SetFixed(2, 0).
+		SetEvaluateAllRows(true).
+		SetContent(netInfoTableData)
+
+	rpcsTable := tview.NewTable().
+		SetBorders(false).
+		SetSelectable(true, false).
+		SetEvaluateAllRows(true).
+		SetContent(rpcsTableData)
+	rpcsTable.SetTitle("RPCs").SetTitleAlign(tview.AlignCenter).SetBorder(true)
 
 	consensusInfoTextView := tview.NewTextView().
 		SetDynamicColors(true).
@@ -108,6 +132,7 @@ func NewWrapper(
 	app := tview.NewApplication().SetRoot(pages, true).SetFocus(lastRoundTable)
 
 	return &Wrapper{
+		State:                 state,
 		ChainInfoTextView:     chainInfoTextView,
 		ConsensusInfoTextView: consensusInfoTextView,
 		ProgressTextView:      progressTextView,
@@ -116,6 +141,10 @@ func NewWrapper(
 		LastRoundTableData:    lastRoundTableData,
 		AllRoundsTable:        allRoundsTable,
 		AllRoundsTableData:    allRoundsTableData,
+		NetInfoTable:          netInfoTable,
+		NetInfoTableData:      netInfoTableData,
+		RPCsTable:             rpcsTable,
+		RPCsTableData:         rpcsTableData,
 		HelpModal:             helpModal,
 		Grid:                  grid,
 		Pages:                 pages,
@@ -135,6 +164,16 @@ func NewWrapper(
 }
 
 func (w *Wrapper) Start() {
+	w.RPCsTable.SetSelectedFunc(func(row, col int) {
+		rpc, ok := w.State.RPCAtIndex(row)
+		if ok {
+			w.State.SetCurrentRPCURL(rpc.URL)
+		}
+		// w.State.Clear()
+		// w.SetState(w.State)
+		w.ToggleRPCList()
+	})
+
 	w.App.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Rune() == 'q' {
 			w.App.Stop()
@@ -154,6 +193,10 @@ func (w *Wrapper) Start() {
 
 		if event.Rune() == 'h' {
 			w.ToggleHelp()
+		}
+
+		if event.Rune() == 'r' {
+			w.ToggleRPCList()
 		}
 
 		if event.Rune() == 'm' {
@@ -185,6 +228,8 @@ func (w *Wrapper) Start() {
 	w.Grid.SetBackgroundColor(tcell.ColorDefault)
 	w.LastRoundTable.SetBackgroundColor(tcell.ColorDefault)
 	w.AllRoundsTable.SetBackgroundColor(tcell.ColorDefault)
+	w.NetInfoTable.SetBackgroundColor(tcell.ColorDefault)
+	w.RPCsTable.SetBackgroundColor(tcell.ColorSteelBlue)
 	w.ChainInfoTextView.SetBackgroundColor(tcell.ColorDefault)
 	w.ConsensusInfoTextView.SetBackgroundColor(tcell.ColorDefault)
 	w.ProgressTextView.SetBackgroundColor(tcell.ColorDefault)
@@ -211,19 +256,26 @@ func (w *Wrapper) Start() {
 
 func (w *Wrapper) ToggleDebug() {
 	w.DebugEnabled = !w.DebugEnabled
+	w.Redraw()
+}
 
+func (w *Wrapper) ToggleRPCList() {
+	w.IsRPCListDisplayed = !w.IsRPCListDisplayed
 	w.Redraw()
 }
 
 func (w *Wrapper) ToggleHelp() {
 	w.IsHelpDisplayed = !w.IsHelpDisplayed
-
 	w.Redraw()
 }
 
 func (w *Wrapper) SetState(state *types.State) {
+	w.State = state
+
 	w.LastRoundTableData.SetValidators(state.GetValidatorsWithInfo(), state.ConsensusStateError)
 	w.AllRoundsTableData.SetValidators(state.GetValidatorsWithInfoAndAllRoundVotes())
+	w.NetInfoTableData.SetNetInfo(state.NetInfo)
+	w.RPCsTableData.SetKnownRPCs(state.KnownRPCs())
 
 	w.ConsensusInfoTextView.Clear()
 	w.ChainInfoTextView.Clear()
@@ -240,7 +292,7 @@ func (w *Wrapper) SetState(state *types.State) {
 }
 
 func (w *Wrapper) DebugText(text string) {
-	_, _ = fmt.Fprint(w.DebugTextView, text)
+	_, _ = fmt.Fprint(w.DebugTextView, text+"\n")
 	w.DebugTextView.ScrollToEnd()
 }
 
@@ -271,6 +323,8 @@ func (w *Wrapper) ChangeMode() {
 	case ModeAllRounds:
 		w.Mode = ModeLastRound
 	case ModeLastRound:
+		w.Mode = ModeNetInfo
+	case ModeNetInfo:
 		w.Mode = ModeAllRounds
 	default:
 		w.Mode = ModeLastRound
@@ -283,6 +337,8 @@ func (w *Wrapper) Redraw() {
 	table := w.LastRoundTable
 	if w.Mode == ModeAllRounds {
 		table = w.AllRoundsTable
+	} else if w.Mode == ModeNetInfo {
+		table = w.NetInfoTable
 	}
 
 	w.Grid.RemoveItem(w.ConsensusInfoTextView)
@@ -330,11 +386,25 @@ func (w *Wrapper) Redraw() {
 		)
 	}
 
+	w.App.SetFocus(table)
+
 	if w.IsHelpDisplayed {
 		w.Pages.AddPage("modal", w.HelpModal, true, true)
 	} else {
 		w.Pages.RemovePage("modal")
 	}
 
-	w.App.SetFocus(table)
+	if w.IsRPCListDisplayed {
+		_, _, pwidth, pheight := w.Pages.GetRect()
+		width := int(float64(pwidth) / 2.5)
+		height := pheight - 8
+		x := (pwidth - width) / 2
+		y := (pheight - height) / 2
+		w.RPCsTable.SetRect(x, y, width, height)
+		w.Pages.AddPage("rpclist", w.RPCsTable, false, true)
+		w.App.SetFocus(w.RPCsTable)
+	} else {
+		w.Pages.RemovePage("rpclist")
+		w.App.SetFocus(table)
+	}
 }

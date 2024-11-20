@@ -1,13 +1,16 @@
 package pkg
 
 import (
+	"fmt"
 	"main/pkg/aggregator"
 	configPkg "main/pkg/config"
 	"main/pkg/display"
 	loggerPkg "main/pkg/logger"
 	"main/pkg/types"
+	"sync"
 	"time"
 
+	"github.com/brynbellomy/go-utils"
 	"github.com/rs/zerolog"
 )
 
@@ -20,13 +23,18 @@ type App struct {
 	State          *types.State
 	LogChannel     chan string
 
+	mbRPCURLs        *utils.Mailbox[types.RPC]
+	rpcURLsLastFetch map[string]time.Time
+
 	PauseChannel chan bool
 	IsPaused     bool
 }
 
 func NewApp(config *configPkg.Config, version string) *App {
-	logChannel := make(chan string)
+	logChannel := make(chan string, 1000)
 	pauseChannel := make(chan bool)
+
+	state := types.NewState(config.RPCHost)
 
 	logger := loggerPkg.GetLogger(logChannel, config).
 		With().
@@ -34,28 +42,77 @@ func NewApp(config *configPkg.Config, version string) *App {
 		Logger()
 
 	return &App{
-		Logger:         logger,
-		Version:        version,
-		Config:         config,
-		Aggregator:     aggregator.NewAggregator(config, logger),
-		DisplayWrapper: display.NewWrapper(config, logger, pauseChannel, version),
-		State:          types.NewState(),
-		LogChannel:     logChannel,
-		PauseChannel:   pauseChannel,
-		IsPaused:       false,
+		Logger:           logger,
+		Version:          version,
+		Config:           config,
+		Aggregator:       aggregator.NewAggregator(config, state, logger),
+		DisplayWrapper:   display.NewWrapper(config, state, logger, pauseChannel, version),
+		State:            state,
+		LogChannel:       logChannel,
+		mbRPCURLs:        utils.NewMailbox[types.RPC](1000),
+		rpcURLsLastFetch: make(map[string]time.Time),
+		PauseChannel:     pauseChannel,
+		IsPaused:         false,
 	}
 }
 
 func (a *App) Start() {
+	go a.CrawlRPCURLs()
+
 	go a.GoRefreshConsensus()
 	go a.GoRefreshValidators()
 	go a.GoRefreshChainInfo()
 	go a.GoRefreshUpgrade()
 	go a.GoRefreshBlockTime()
+	go a.GoRefreshNetInfo()
 	go a.DisplayLogs()
 	go a.ListenForPause()
 
 	a.DisplayWrapper.Start()
+}
+
+func (a *App) CrawlRPCURLs() {
+	a.mbRPCURLs.Deliver(types.RPC{URL: a.Config.RPCHost})
+	timer := time.NewTimer(15 * time.Second)
+
+	for {
+		select {
+		case <-a.mbRPCURLs.Notify():
+			var wg sync.WaitGroup
+			for _, rpc := range a.mbRPCURLs.RetrieveAll() {
+				if lastFetch, ok := a.rpcURLsLastFetch[rpc.URL]; ok && time.Now().Sub(lastFetch) < 15*time.Second {
+					continue
+				}
+				a.rpcURLsLastFetch[rpc.URL] = time.Now()
+				a.State.AddKnownRPC(rpc)
+
+				rpc := rpc
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+
+					netInfo, err := a.Aggregator.GetNetInfo(rpc.URL)
+					if err != nil {
+						a.LogChannel <- fmt.Sprintf("error getting net_info from %s: %v", rpc.URL, err)
+						return
+					}
+
+					for _, peer := range netInfo.Peers {
+						a.mbRPCURLs.Deliver(types.RPC{URL: "http://" + peer.RemoteIP + ":26657", Moniker: peer.NodeInfo.Moniker})
+					}
+				}()
+			}
+			wg.Wait()
+
+		case <-timer.C:
+			for _, rpc := range a.State.KnownRPCs() {
+				if time.Since(a.rpcURLsLastFetch[rpc.URL]) >= 15*time.Second {
+					a.mbRPCURLs.Deliver(rpc)
+				}
+			}
+		}
+
+	}
 }
 
 func (a *App) GoRefreshConsensus() {
@@ -248,6 +305,39 @@ func (a *App) RefreshBlockTime() {
 	}
 
 	a.State.SetBlockTime(blockTime)
+	a.DisplayWrapper.SetState(a.State)
+}
+
+func (a *App) GoRefreshNetInfo() {
+	defer a.HandlePanic()
+
+	a.RefreshNetInfo()
+
+	ticker := time.NewTicker(a.Config.RefreshRate)
+	done := make(chan bool)
+
+	for {
+		select {
+		case <-done:
+			return
+		case <-ticker.C:
+			a.RefreshNetInfo()
+		}
+	}
+}
+
+func (a *App) RefreshNetInfo() {
+	if a.IsPaused {
+		return
+	}
+
+	netInfo, err := a.Aggregator.GetNetInfo(a.State.CurrentRPC().URL)
+	if err != nil {
+		a.Logger.Error().Err(err).Msg("Error getting netInfo")
+		return
+	}
+
+	a.State.SetNetInfo(netInfo)
 	a.DisplayWrapper.SetState(a.State)
 }
 

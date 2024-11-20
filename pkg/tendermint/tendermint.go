@@ -16,22 +16,28 @@ import (
 
 type RPC struct {
 	Config     *configPkg.Config
+	State      *types.State
 	Logger     zerolog.Logger
 	Client     *http.Client
 	LogChannel chan string
 }
 
-func NewRPC(config *configPkg.Config, logger zerolog.Logger) *RPC {
+func NewRPC(config *configPkg.Config, state *types.State, logger zerolog.Logger) *RPC {
 	return &RPC{
 		Config: config,
+		State:  state,
 		Logger: logger.With().Str("component", "tendermint_rpc").Logger(),
 		Client: http.NewClient(logger, "tendermint_rpc", config.RPCHost),
 	}
 }
 
+func (rpc *RPC) client() *http.Client {
+	return http.NewClient(rpc.Logger, "tendermint_rpc", rpc.State.CurrentRPC().URL)
+}
+
 func (rpc *RPC) GetConsensusState() (*types.ConsensusStateResponse, error) {
 	var response types.ConsensusStateResponse
-	if err := rpc.Client.Get("/consensus_state", &response); err != nil {
+	if err := rpc.client().Get("/consensus_state", &response); err != nil {
 		return nil, err
 	}
 
@@ -84,7 +90,7 @@ func (rpc *RPC) GetValidators() ([]types.TendermintValidator, error) {
 
 func (rpc *RPC) GetValidatorsViaDumpConsensusState() ([]types.TendermintValidator, error) {
 	var response types.DumpConsensusStateResponse
-	if err := rpc.Client.Get("/dump_consensus_state", &response); err != nil {
+	if err := rpc.client().Get("/dump_consensus_state", &response); err != nil {
 		return nil, err
 	}
 
@@ -99,7 +105,7 @@ func (rpc *RPC) GetValidatorsViaDumpConsensusState() ([]types.TendermintValidato
 
 func (rpc *RPC) GetStatus() (*types.TendermintStatusResponse, error) {
 	var response types.TendermintStatusResponse
-	if err := rpc.Client.Get("/status", &response); err != nil {
+	if err := rpc.client().Get("/status", &response); err != nil {
 		return nil, err
 	}
 
@@ -108,7 +114,7 @@ func (rpc *RPC) GetStatus() (*types.TendermintStatusResponse, error) {
 
 func (rpc *RPC) GetValidatorsAtPage(page int) (*types.ValidatorsResponse, error) {
 	var response types.ValidatorsResponse
-	if err := rpc.Client.Get(fmt.Sprintf("/validators?page=%d&per_page=100", page), &response); err != nil {
+	if err := rpc.client().Get(fmt.Sprintf("/validators?page=%d&per_page=100", page), &response); err != nil {
 		return nil, err
 	}
 
@@ -122,7 +128,7 @@ func (rpc *RPC) Block(height int64) (types.TendermintBlockResponse, error) {
 	}
 
 	res := types.TendermintBlockResponse{}
-	err := rpc.Client.Get(blockURL, &res)
+	err := rpc.client().Get(blockURL, &res)
 	return res, err
 }
 

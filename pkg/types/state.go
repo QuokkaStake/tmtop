@@ -5,6 +5,7 @@ import (
 	"main/pkg/utils"
 	"math/big"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -19,6 +20,11 @@ type State struct {
 	StartTime                    time.Time
 	Upgrade                      *Upgrade
 	BlockTime                    time.Duration
+	NetInfo                      *NetInfo
+
+	currentRPC string
+	knownRPCs  *utils.OrderedMap[string, RPC]
+	muRPCs     *sync.RWMutex
 
 	ConsensusStateError  error
 	ValidatorsError      error
@@ -27,7 +33,14 @@ type State struct {
 	ChainInfoError       error
 }
 
-func NewState() *State {
+type RPC struct {
+	URL     string
+	Moniker string
+}
+
+func NewState(firstRPC string) *State {
+	knownRPCs := utils.NewOrderedMap[string, RPC]()
+	knownRPCs.Set(firstRPC, RPC{firstRPC, ""})
 	return &State{
 		Height:          0,
 		Round:           0,
@@ -36,7 +49,74 @@ func NewState() *State {
 		ChainValidators: nil,
 		StartTime:       time.Now(),
 		BlockTime:       0,
+		currentRPC:      firstRPC,
+		knownRPCs:       knownRPCs,
+		muRPCs:          &sync.RWMutex{},
 	}
+}
+
+func (s *State) Clear() {
+	s.Height = 0
+	s.Round = 0
+	s.Step = 0
+	s.Validators = nil
+	s.ValidatorsWithAllRoundsVotes = nil
+	s.ChainValidators = nil
+	s.ChainInfo = nil
+	s.StartTime = time.Now()
+	s.Upgrade = nil
+	s.BlockTime = time.Duration(0)
+	s.NetInfo = nil
+	s.ConsensusStateError = nil
+	s.ValidatorsError = nil
+	s.ChainValidatorsError = nil
+	s.UpgradePlanError = nil
+	s.ChainInfoError = nil
+}
+
+func (s *State) CurrentRPC() RPC {
+	s.muRPCs.RLock()
+	defer s.muRPCs.RUnlock()
+
+	rpc, _ := s.knownRPCs.Get(s.currentRPC)
+	return rpc
+}
+
+func (s *State) SetCurrentRPCURL(rpcURL string) {
+	s.muRPCs.Lock()
+	defer s.muRPCs.Unlock()
+
+	s.currentRPC = rpcURL
+}
+
+func (s *State) KnownRPCs() []RPC {
+	s.muRPCs.RLock()
+	defer s.muRPCs.RUnlock()
+
+	return s.knownRPCs.Values()
+}
+
+func (s *State) AddKnownRPC(rpc RPC) {
+	s.muRPCs.Lock()
+	defer s.muRPCs.Unlock()
+
+	s.knownRPCs.Set(rpc.URL, rpc)
+}
+
+func (s *State) IsKnownRPC(rpcURL string) bool {
+	s.muRPCs.RLock()
+	defer s.muRPCs.RUnlock()
+
+	_, ok := s.knownRPCs.Get(rpcURL)
+	return ok
+}
+
+func (s *State) RPCAtIndex(index int) (RPC, bool) {
+	s.muRPCs.RLock()
+	defer s.muRPCs.RUnlock()
+
+	_, rpc, ok := s.knownRPCs.GetByIndex(index)
+	return rpc, ok
 }
 
 func (s *State) SetTendermintResponse(
@@ -81,6 +161,10 @@ func (s *State) SetUpgrade(upgrade *Upgrade) {
 
 func (s *State) SetBlockTime(blockTime time.Duration) {
 	s.BlockTime = blockTime
+}
+
+func (s *State) SetNetInfo(info *NetInfo) {
+	s.NetInfo = info
 }
 
 func (s *State) SetConsensusStateError(err error) {
@@ -189,6 +273,9 @@ func (s *State) SerializeConsensus(timezone *time.Location) string {
 
 func (s *State) SerializeChainInfo(timezone *time.Location) string {
 	var sb strings.Builder
+
+	sb.WriteString(fmt.Sprintf(" rpc: %v\n", s.CurrentRPC().URL))
+	sb.WriteString(fmt.Sprintf(" (%v)\n\n", s.CurrentRPC().Moniker))
 
 	if s.ChainInfoError != nil {
 		sb.WriteString(fmt.Sprintf(" chain info fetch error: %s\n", s.ChainInfoError.Error()))

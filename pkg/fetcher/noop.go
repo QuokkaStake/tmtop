@@ -18,3 +18,7 @@ func (f *NoopDataFetcher) GetValidators() (*types.ChainValidators, error) {
 func (f *NoopDataFetcher) GetUpgradePlan() (*types.Upgrade, error) {
 	return nil, nil
 }
+
+func (f *NoopDataFetcher) GetNetInfo(host string) (*types.NetInfo, error) {
+	return nil, nil
+}

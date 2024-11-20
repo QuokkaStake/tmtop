@@ -8,9 +8,14 @@ import (
 	"main/pkg/http"
 	"main/pkg/types"
 	"main/pkg/utils"
+	gohttp "net/http"
 	"net/url"
 	"strconv"
 	"strings"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"github.com/cometbft/cometbft/crypto/secp256k1"
 
 	"github.com/cosmos/cosmos-sdk/x/auth/tx"
 	genutilTypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
@@ -18,6 +23,7 @@ import (
 	sdkTypes "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/cosmos/cosmos-sdk/std"
+	"github.com/mitchellh/mapstructure"
 	"github.com/rs/zerolog"
 
 	upgradeTypes "cosmossdk.io/x/upgrade/types"
@@ -32,7 +38,7 @@ import (
 type CosmosRPCDataFetcher struct {
 	Config         *configPkg.Config
 	Logger         zerolog.Logger
-	Client         *http.Client
+	State          *types.State
 	ProviderClient *http.Client
 
 	Registry   codecTypes.InterfaceRegistry
@@ -40,7 +46,7 @@ type CosmosRPCDataFetcher struct {
 	TxDecoder  sdkTypes.TxDecoder
 }
 
-func NewCosmosRPCDataFetcher(config *configPkg.Config, logger zerolog.Logger) *CosmosRPCDataFetcher {
+func NewCosmosRPCDataFetcher(config *configPkg.Config, state *types.State, logger zerolog.Logger) *CosmosRPCDataFetcher {
 	interfaceRegistry := codecTypes.NewInterfaceRegistry()
 	std.RegisterInterfaces(interfaceRegistry)
 	stakingTypes.RegisterInterfaces(interfaceRegistry) // for MsgCreateValidator for gentx parsing
@@ -49,9 +55,9 @@ func NewCosmosRPCDataFetcher(config *configPkg.Config, logger zerolog.Logger) *C
 
 	return &CosmosRPCDataFetcher{
 		Config:         config,
+		State:          state,
 		Logger:         logger.With().Str("component", "cosmos_data_fetcher").Logger(),
 		ProviderClient: http.NewClient(logger, "cosmos_data_fetcher", config.ProviderRPCHost),
-		Client:         http.NewClient(logger, "cosmos_data_fetcher", config.RPCHost),
 		Registry:       interfaceRegistry,
 		ParseCodec:     parseCodec,
 		TxDecoder:      txDecoder.TxJSONDecoder(),
@@ -62,8 +68,11 @@ func (f *CosmosRPCDataFetcher) GetProviderOrConsumerClient() *http.Client {
 	if f.Config.ProviderRPCHost != "" {
 		return f.ProviderClient
 	}
+	return f.client()
+}
 
-	return f.Client
+func (f *CosmosRPCDataFetcher) client() *http.Client {
+	return http.NewClient(f.Logger, "cosmos_data_fetcher", f.State.CurrentRPC().URL)
 }
 
 func (f *CosmosRPCDataFetcher) AbciQuery(
@@ -98,6 +107,12 @@ func (f *CosmosRPCDataFetcher) AbciQuery(
 	}
 
 	return output.Unmarshal(response.Result.Response.Value)
+}
+
+func validatorAddr(pubkeyBytes []byte) string {
+	pubkey := secp256k1.PubKey(pubkeyBytes)
+	pubKeyConvertedToAddress := sdk.ValAddress(pubkey.Address().Bytes())
+	return pubKeyConvertedToAddress.String()
 }
 
 func (f *CosmosRPCDataFetcher) ParseValidator(validator stakingTypes.Validator) (types.ChainValidator, error) {
@@ -139,13 +154,21 @@ func (f *CosmosRPCDataFetcher) GetValidators() (*types.ChainValidators, error) {
 
 	validators := make(types.ChainValidators, len(validatorsResponse.Validators))
 
+	// fx, err := os.Create("/tmp/blah")
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// defer fx.Close()
 	for index, validator := range validatorsResponse.Validators {
 		if chainValidator, err := f.ParseValidator(validator); err != nil {
 			return nil, err
 		} else {
 			validators[index] = chainValidator
 		}
+		// fmt.Println(len(string(validator.ConsensusPubkey.Value)))
+		// fx.Write([]byte(validatorAddr(validator.ConsensusPubkey.Value) + "\n"))
 	}
+	// os.Exit(0)
 
 	if !f.Config.IsConsumer() {
 		return &validators, nil
@@ -300,7 +323,7 @@ func (f *CosmosRPCDataFetcher) GetGenesisValidators() (*types.ChainValidators, e
 
 func (f *CosmosRPCDataFetcher) GetGenesisChunk(chunk int64) ([]byte, int64, error) {
 	var response types.TendermintGenesisChunkResponse
-	if err := f.Client.Get(
+	if err := f.client().Get(
 		fmt.Sprintf("/genesis_chunked?chunk=%d", chunk),
 		&response,
 	); err != nil {
@@ -327,7 +350,7 @@ func (f *CosmosRPCDataFetcher) GetUpgradePlan() (*types.Upgrade, error) {
 		"/cosmos.upgrade.v1beta1.Query/CurrentPlan",
 		&query,
 		&response,
-		f.Client,
+		f.client(),
 	); err != nil {
 		return nil, err
 	}
@@ -340,4 +363,33 @@ func (f *CosmosRPCDataFetcher) GetUpgradePlan() (*types.Upgrade, error) {
 		Name:   response.Plan.Name,
 		Height: response.Plan.Height,
 	}, nil
+}
+
+func (f *CosmosRPCDataFetcher) GetNetInfo(host string) (*types.NetInfo, error) {
+	if host[len(host)-1] != '/' {
+		host = host + "/"
+	}
+	url := host + "net_info"
+	resp, err := gohttp.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	var jsonMap map[string]any
+	err = json.NewDecoder(resp.Body).Decode(&jsonMap)
+	if err != nil {
+		return nil, err
+	}
+
+	var netInfo struct {
+		Result types.NetInfo `json:"result"`
+	}
+	decoder, _ := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
+		DecodeHook:       types.StringToCustomTimeHookFunc,
+		WeaklyTypedInput: true,
+		Result:           &netInfo,
+	})
+	err = decoder.Decode(jsonMap)
+	return &netInfo.Result, err
 }

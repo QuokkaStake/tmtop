@@ -19,12 +19,12 @@ type Aggregator struct {
 	DataFetcher      dataFetcher.DataFetcher
 }
 
-func NewAggregator(config *configPkg.Config, logger zerolog.Logger) *Aggregator {
+func NewAggregator(config *configPkg.Config, state *types.State, logger zerolog.Logger) *Aggregator {
 	return &Aggregator{
 		Config:           config,
 		Logger:           logger.With().Str("component", "aggregator").Logger(),
-		TendermintClient: tendermint.NewRPC(config, logger),
-		DataFetcher:      dataFetcher.GetDataFetcher(config, logger),
+		TendermintClient: tendermint.NewRPC(config, state, logger),
+		DataFetcher:      dataFetcher.GetDataFetcher(config, state, logger),
 	}
 }
 
@@ -82,4 +82,8 @@ func (a *Aggregator) GetUpgrade() (*types.Upgrade, error) {
 
 func (a *Aggregator) GetBlockTime() (time.Duration, error) {
 	return a.TendermintClient.GetBlockTime()
+}
+
+func (a *Aggregator) GetNetInfo(host string) (*types.NetInfo, error) {
+	return a.DataFetcher.GetNetInfo(host)
 }

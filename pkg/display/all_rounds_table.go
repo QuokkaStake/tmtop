@@ -2,8 +2,8 @@ package display
 
 import (
 	"main/pkg/types"
+	"main/pkg/utils"
 	"strconv"
-	"sync"
 
 	"github.com/gdamore/tcell/v2"
 
@@ -18,7 +18,7 @@ type AllRoundsTableData struct {
 	Transpose     bool
 
 	cells [][]*tview.TableCell
-	mutex sync.Mutex
+	mutex *utils.NoopLocker
 }
 
 func NewAllRoundsTableData(disableEmojis bool, transpose bool) *AllRoundsTableData {
@@ -27,12 +27,13 @@ func NewAllRoundsTableData(disableEmojis bool, transpose bool) *AllRoundsTableDa
 		DisableEmojis: disableEmojis,
 		Transpose:     transpose,
 		cells:         [][]*tview.TableCell{},
+		mutex:         &utils.NoopLocker{},
 	}
 }
 
 func (d *AllRoundsTableData) GetCell(row, column int) *tview.TableCell {
-	d.mutex.Lock()
-	defer d.mutex.Unlock()
+	d.mutex.RLock()
+	defer d.mutex.RUnlock()
 
 	if len(d.cells) <= row {
 		return nil
@@ -46,15 +47,15 @@ func (d *AllRoundsTableData) GetCell(row, column int) *tview.TableCell {
 }
 
 func (d *AllRoundsTableData) GetRowCount() int {
-	d.mutex.Lock()
-	defer d.mutex.Unlock()
+	d.mutex.RLock()
+	defer d.mutex.RUnlock()
 
 	return len(d.cells)
 }
 
 func (d *AllRoundsTableData) GetColumnCount() int {
-	d.mutex.Lock()
-	defer d.mutex.Unlock()
+	d.mutex.RLock()
+	defer d.mutex.RUnlock()
 
 	if len(d.cells) == 0 {
 		return 0
@@ -64,27 +65,42 @@ func (d *AllRoundsTableData) GetColumnCount() int {
 }
 
 func (d *AllRoundsTableData) SetValidators(validators types.ValidatorsWithInfoAndAllRoundVotes) {
+	d.mutex.RLock()
 	if d.Validators.Equals(validators) {
 		return
 	}
+	d.mutex.RUnlock()
 
+	d.mutex.Lock()
 	d.Validators = validators
+	d.mutex.Unlock()
+
 	d.redrawCells()
 }
 
 func (d *AllRoundsTableData) SetTranspose(transpose bool) {
+	d.mutex.Lock()
 	d.Transpose = transpose
+	d.mutex.Unlock()
 	d.redrawCells()
 }
 
 func (d *AllRoundsTableData) redrawCells() {
+	cells := d.makeCells()
+
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
+	d.cells = cells
+}
 
-	d.cells = make([][]*tview.TableCell, len(d.Validators.Validators)+1)
+func (d *AllRoundsTableData) makeCells() [][]*tview.TableCell {
+	d.mutex.RLock()
+	defer d.mutex.RUnlock()
+
+	cells := make([][]*tview.TableCell, len(d.Validators.Validators)+1)
 
 	for row := 0; row < len(d.Validators.Validators)+1; row++ {
-		d.cells[row] = make([]*tview.TableCell, len(d.Validators.RoundsVotes)+1)
+		cells[row] = make([]*tview.TableCell, len(d.Validators.RoundsVotes)+1)
 
 		for column := 0; column < len(d.Validators.RoundsVotes)+1; column++ {
 			round := column - 1
@@ -99,7 +115,7 @@ func (d *AllRoundsTableData) redrawCells() {
 					text = strconv.Itoa(round)
 				}
 
-				d.cells[row][column] = tview.
+				cells[row][column] = tview.
 					NewTableCell(text).
 					SetAlign(tview.AlignCenter).
 					SetStyle(tcell.StyleDefault.Bold(true))
@@ -110,7 +126,7 @@ func (d *AllRoundsTableData) redrawCells() {
 			if column == 0 {
 				text := d.Validators.Validators[row-1].Serialize()
 				cell := tview.NewTableCell(text)
-				d.cells[row][column] = cell
+				cells[row][column] = cell
 				continue
 			}
 
@@ -124,7 +140,8 @@ func (d *AllRoundsTableData) redrawCells() {
 				cell.SetBackgroundColor(tcell.ColorForestGreen)
 			}
 
-			d.cells[row][column] = cell
+			cells[row][column] = cell
 		}
 	}
+	return cells
 }

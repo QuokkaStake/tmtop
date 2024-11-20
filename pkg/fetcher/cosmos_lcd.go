@@ -95,3 +95,7 @@ func (f *CosmosLcdDataFetcher) GetUpgradePlan() (*types.Upgrade, error) {
 		Height: response.Plan.Height,
 	}, nil
 }
+
+func (f *CosmosLcdDataFetcher) GetNetInfo(host string) (*types.NetInfo, error) {
+	return nil, nil
+}

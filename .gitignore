@@ -6,3 +6,5 @@ tmtop
 dist
 **/.DS_Store
 out.txt
+
+*.sublime-*

@@ -10,9 +10,10 @@ import (
 type DataFetcher interface {
 	GetValidators() (*types.ChainValidators, error)
 	GetUpgradePlan() (*types.Upgrade, error)
+	GetNetInfo(host string) (*types.NetInfo, error)
 }
 
-func GetDataFetcher(config *configPkg.Config, logger zerolog.Logger) DataFetcher {
+func GetDataFetcher(config *configPkg.Config, state *types.State, logger zerolog.Logger) DataFetcher {
 	if config.ChainType == "tendermint" {
 		return NewNoopDataFetcher()
 	}
@@ -21,5 +22,5 @@ func GetDataFetcher(config *configPkg.Config, logger zerolog.Logger) DataFetcher
 		return NewCosmosLcdDataFetcher(config, logger)
 	}
 
-	return NewCosmosRPCDataFetcher(config, logger)
+	return NewCosmosRPCDataFetcher(config, state, logger)
 }

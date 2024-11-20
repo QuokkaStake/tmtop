@@ -3,7 +3,7 @@ package display
 import (
 	"fmt"
 	"main/pkg/types"
-	"sync"
+	"main/pkg/utils"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -19,7 +19,7 @@ type LastRoundTableData struct {
 	Transpose      bool
 
 	cells [][]*tview.TableCell
-	mutex sync.Mutex
+	mutex *utils.NoopLocker
 }
 
 func NewLastRoundTableData(columnsCount int, disableEmojis bool, transpose bool) *LastRoundTableData {
@@ -30,22 +30,29 @@ func NewLastRoundTableData(columnsCount int, disableEmojis bool, transpose bool)
 		Transpose:     transpose,
 
 		cells: [][]*tview.TableCell{},
+		mutex: &utils.NoopLocker{},
 	}
 }
 
 func (d *LastRoundTableData) SetColumnsCount(count int) {
+	d.mutex.Lock()
 	d.ColumnsCount = count
+	d.mutex.Unlock()
+
 	d.redrawData()
 }
 
 func (d *LastRoundTableData) SetTranspose(transpose bool) {
+	d.mutex.Lock()
 	d.Transpose = transpose
+	d.mutex.Unlock()
+
 	d.redrawData()
 }
 
 func (d *LastRoundTableData) GetCell(row, column int) *tview.TableCell {
-	d.mutex.Lock()
-	defer d.mutex.Unlock()
+	d.mutex.RLock()
+	defer d.mutex.RUnlock()
 
 	if len(d.cells) <= row {
 		return nil
@@ -59,15 +66,15 @@ func (d *LastRoundTableData) GetCell(row, column int) *tview.TableCell {
 }
 
 func (d *LastRoundTableData) GetRowCount() int {
-	d.mutex.Lock()
-	defer d.mutex.Unlock()
+	d.mutex.RLock()
+	defer d.mutex.RUnlock()
 
 	return len(d.cells)
 }
 
 func (d *LastRoundTableData) GetColumnCount() int {
-	d.mutex.Lock()
-	defer d.mutex.Unlock()
+	d.mutex.RLock()
+	defer d.mutex.RUnlock()
 
 	if len(d.cells) == 0 {
 		return 0
@@ -77,22 +84,27 @@ func (d *LastRoundTableData) GetColumnCount() int {
 }
 
 func (d *LastRoundTableData) SetValidators(validators types.ValidatorsWithInfo, consensusError error) {
+	d.mutex.Lock()
 	d.Validators = validators
 	d.ConsensusError = consensusError
+	d.mutex.Unlock()
+
 	d.redrawData()
 }
 
 func (d *LastRoundTableData) redrawData() {
+	cells := d.makeCells()
+
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
+	d.cells = cells
+}
 
+func (d *LastRoundTableData) makeCells() [][]*tview.TableCell {
 	if d.ConsensusError != nil {
-		d.cells = [][]*tview.TableCell{
-			{
-				tview.NewTableCell(fmt.Sprintf(" Error fetching consensus: %s", d.ConsensusError)),
-			},
+		return [][]*tview.TableCell{
+			{tview.NewTableCell(fmt.Sprintf(" Error fetching consensus: %s", d.ConsensusError))},
 		}
-		return
 	}
 
 	rowsCount := len(d.Validators)/d.ColumnsCount + 1
@@ -100,10 +112,10 @@ func (d *LastRoundTableData) redrawData() {
 		rowsCount = len(d.Validators) / d.ColumnsCount
 	}
 
-	d.cells = make([][]*tview.TableCell, rowsCount)
+	cells := make([][]*tview.TableCell, rowsCount)
 
 	for row := 0; row < rowsCount; row++ {
-		d.cells[row] = make([]*tview.TableCell, d.ColumnsCount)
+		cells[row] = make([]*tview.TableCell, d.ColumnsCount)
 
 		for column := 0; column < d.ColumnsCount; column++ {
 			index := row*d.ColumnsCount + column
@@ -125,7 +137,8 @@ func (d *LastRoundTableData) redrawData() {
 				cell.SetBackgroundColor(tcell.ColorForestGreen)
 			}
 
-			d.cells[row][column] = cell
+			cells[row][column] = cell
 		}
 	}
+	return cells
 }
