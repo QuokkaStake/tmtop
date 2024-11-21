@@ -57,6 +57,8 @@ func main() {
 	rootCmd.PersistentFlags().Int64Var(&config.HaltHeight, "halt-height", 0, "Custom halt-height")
 	rootCmd.PersistentFlags().Uint64Var(&config.BlocksBehind, "blocks-behind", 1000, "How many blocks behind to check to calculate block time")
 	rootCmd.PersistentFlags().StringVar(&config.Timezone, "timezone", "", "Timezone to display dates in")
+	rootCmd.PersistentFlags().BoolVar(&config.WithTopologyAPI, "with-topology-api", false, "Enable topology API")
+	rootCmd.PersistentFlags().StringVar(&config.TopologyListenAddr, "topology-listen-addr", "0.0.0.0:8080", "The address on which to serve topology API")
 
 	if err := rootCmd.Execute(); err != nil {
 		logger.GetDefaultLogger().Fatal().Err(err).Msg("Could not start application")
