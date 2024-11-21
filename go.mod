@@ -12,10 +12,12 @@ require (
 	github.com/cosmos/cosmos-sdk v0.50.9
 	github.com/cosmos/interchain-security/v6 v6.1.0
 	github.com/gdamore/tcell/v2 v2.6.0
+	github.com/gorilla/mux v1.8.1
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/rivo/tview v0.0.0-20231022175332-f7f32ad28104
 	github.com/rs/zerolog v1.33.0
 	github.com/spf13/cobra v1.8.1
+	gonum.org/v1/gonum v0.12.0
 )
 
 require (
@@ -86,7 +88,6 @@ require (
 	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/handlers v1.5.2 // indirect
-	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0 // indirect
