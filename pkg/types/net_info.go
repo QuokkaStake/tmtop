@@ -24,6 +24,10 @@ type Peer struct {
 	RemoteIP         string           `mapstructure:"remote_ip"`
 }
 
+func (p Peer) URL() string {
+	return "http://" + p.RemoteIP + ":26657"
+}
+
 type DefaultNodeInfo struct {
 	ProtocolVersion ProtocolVersion `mapstructure:"protocol_version"`
 

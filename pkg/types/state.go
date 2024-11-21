@@ -24,6 +24,7 @@ type State struct {
 
 	currentRPC string
 	knownRPCs  *utils.OrderedMap[string, RPC]
+	rpcPeers   *utils.OrderedMap[string, []Peer]
 	muRPCs     *sync.RWMutex
 
 	ConsensusStateError  error
@@ -51,6 +52,7 @@ func NewState(firstRPC string) *State {
 		BlockTime:       0,
 		currentRPC:      firstRPC,
 		knownRPCs:       knownRPCs,
+		rpcPeers:        utils.NewOrderedMap[string, []Peer](),
 		muRPCs:          &sync.RWMutex{},
 	}
 }
@@ -117,6 +119,21 @@ func (s *State) RPCAtIndex(index int) (RPC, bool) {
 
 	_, rpc, ok := s.knownRPCs.GetByIndex(index)
 	return rpc, ok
+}
+
+func (s *State) AddRPCPeers(rpcURL string, peers []Peer) {
+	s.muRPCs.Lock()
+	defer s.muRPCs.Unlock()
+
+	s.rpcPeers.Set(rpcURL, peers)
+}
+
+func (s *State) RPCPeers(rpcURL string) []Peer {
+	s.muRPCs.Lock()
+	defer s.muRPCs.Unlock()
+
+	peers, _ := s.rpcPeers.Get(rpcURL)
+	return peers
 }
 
 func (s *State) SetTendermintResponse(
