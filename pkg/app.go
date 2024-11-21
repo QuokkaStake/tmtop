@@ -5,7 +5,9 @@ import (
 	"main/pkg/aggregator"
 	configPkg "main/pkg/config"
 	"main/pkg/display"
+	tmhttp "main/pkg/http"
 	loggerPkg "main/pkg/logger"
+	"main/pkg/topology"
 	"main/pkg/types"
 	"sync"
 	"time"
@@ -57,6 +59,10 @@ func NewApp(config *configPkg.Config, version string) *App {
 }
 
 func (a *App) Start() {
+	if a.Config.WithTopologyAPI {
+		go a.ServeTopology()
+	}
+
 	go a.CrawlRPCURLs()
 
 	go a.GoRefreshConsensus()
@@ -69,6 +75,13 @@ func (a *App) Start() {
 	go a.ListenForPause()
 
 	a.DisplayWrapper.Start()
+}
+
+func (a *App) ServeTopology() {
+	_ = tmhttp.NewServer(
+		a.Config.TopologyListenAddr,
+		topology.WithHTTPTopologyAPI(a.State),
+	).Serve()
 }
 
 func (a *App) CrawlRPCURLs() {
@@ -97,8 +110,9 @@ func (a *App) CrawlRPCURLs() {
 						return
 					}
 
+					a.State.AddRPCPeers(rpc.URL, netInfo.Peers)
 					for _, peer := range netInfo.Peers {
-						a.mbRPCURLs.Deliver(types.RPC{URL: "http://" + peer.RemoteIP + ":26657", Moniker: peer.NodeInfo.Moniker})
+						a.mbRPCURLs.Deliver(types.RPC{URL: peer.URL(), Moniker: peer.NodeInfo.Moniker})
 					}
 				}()
 			}
