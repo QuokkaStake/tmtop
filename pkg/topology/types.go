@@ -52,7 +52,7 @@ func (e *Edge) To() graph.Node {
 }
 
 func (e *Edge) ReversedEdge() graph.Edge {
-	return &Edge{from: e.to, to: e.from, color: e.color}
+	return &Edge{from: e.to, to: e.from, color: e.color, width: e.width}
 }
 
 func (e *Edge) SetColor(color string) {

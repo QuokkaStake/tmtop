@@ -63,6 +63,10 @@ func ComputeTopology(state *types.State, highlightNodes []string) (graph.Graph, 
 				edge := g.Edge(npath[e].ID(), npath[e+1].ID()).(*Edge)
 				edge.SetColor("crimson")
 				edge.SetWidth("3.0")
+				// hack: color the reverse path to make sure we don't color the "copied" reversed edge
+				edge = g.Edge(npath[e+1].ID(), npath[e].ID()).(*Edge)
+				edge.SetColor("crimson")
+				edge.SetWidth("3.0")
 			}
 		}
 	}
