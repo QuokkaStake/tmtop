@@ -5,6 +5,7 @@ import (
 	"golang.org/x/exp/slices"
 	"gonum.org/v1/gonum/graph"
 	"gonum.org/v1/gonum/graph/encoding/dot"
+	"gonum.org/v1/gonum/graph/path"
 	"gonum.org/v1/gonum/graph/simple"
 	"io"
 	"main/pkg/types"
@@ -42,7 +43,23 @@ func ComputeTopology(state *types.State, highlightNodes []string) (graph.Graph, 
 				continue
 			}
 
-			g.SetEdge(NewEdge(g.Node(rpcID), g.Node(peerID), "azure4"))
+			g.SetEdge(NewEdge(g.Node(rpcID), g.Node(peerID), "azure4", "1.0"))
+		}
+	}
+
+	for i, n := range highlightedNodes {
+		paths := path.DijkstraFrom(n, g)
+		for j := i + 1; j < len(highlightedNodes); j++ {
+			npath, _ := paths.To(highlightedNodes[j].ID())
+			if npath == nil {
+				continue
+			}
+
+			for e := 0; e < len(npath)-1; e++ {
+				edge := g.Edge(npath[e].ID(), npath[e+1].ID()).(*Edge)
+				edge.SetColor("crimson")
+				edge.SetWidth("3.0")
+			}
 		}
 	}
 

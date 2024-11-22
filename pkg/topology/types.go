@@ -28,15 +28,16 @@ func (n *Node) Attributes() []encoding.Attribute {
 }
 
 type Edge struct {
-	from, to graph.Node
-	color    string
+	from, to     graph.Node
+	color, width string
 }
 
-func NewEdge(from, to graph.Node, color string) *Edge {
+func NewEdge(from, to graph.Node, color string, width string) *Edge {
 	return &Edge{
 		from:  from,
 		to:    to,
 		color: color,
+		width: width,
 	}
 }
 
@@ -56,8 +57,17 @@ func (e *Edge) SetColor(color string) {
 	e.color = color
 }
 
+func (e *Edge) SetWidth(width string) {
+	e.width = width
+}
+
+func (e *Edge) Weight() float64 {
+	return 1.0
+}
+
 func (e *Edge) Attributes() []encoding.Attribute {
 	return []encoding.Attribute{
 		{Key: "color", Value: e.color},
+		{Key: "penwidth", Value: e.width},
 	}
 }
