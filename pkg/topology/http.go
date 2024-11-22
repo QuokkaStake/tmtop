@@ -7,9 +7,9 @@ import (
 	"net/http"
 )
 
-func WithHTTPTopologyAPI(state *types.State) tmhttp.Option {
+func WithHTTPTopologyAPI(state *types.State, highlightNodes []string) tmhttp.Option {
 	return tmhttp.WithRoute("GET", "/topology", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		topoGraph, err := ComputeTopology(state)
+		topoGraph, err := ComputeTopology(state, highlightNodes)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Could not compute topology: %s", err.Error()), http.StatusInternalServerError)
 			return

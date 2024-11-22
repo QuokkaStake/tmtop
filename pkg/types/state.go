@@ -35,13 +35,14 @@ type State struct {
 }
 
 type RPC struct {
+	IP      string
 	URL     string
 	Moniker string
 }
 
 func NewState(firstRPC string) *State {
 	knownRPCs := utils.NewOrderedMap[string, RPC]()
-	knownRPCs.Set(firstRPC, RPC{firstRPC, ""})
+	knownRPCs.Set(firstRPC, RPC{"", firstRPC, ""})
 	return &State{
 		Height:          0,
 		Round:           0,

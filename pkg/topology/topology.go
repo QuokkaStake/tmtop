@@ -2,6 +2,7 @@ package topology
 
 import (
 	"bytes"
+	"golang.org/x/exp/slices"
 	"gonum.org/v1/gonum/graph"
 	"gonum.org/v1/gonum/graph/encoding/dot"
 	"gonum.org/v1/gonum/graph/simple"
@@ -9,12 +10,22 @@ import (
 	"main/pkg/types"
 )
 
-func ComputeTopology(state *types.State) (graph.Graph, error) {
+func ComputeTopology(state *types.State, highlightNodes []string) (graph.Graph, error) {
 	nodeIDs := make(map[string]int64)
+	var highlightedNodes []*Node
 	g := simple.NewUndirectedGraph()
 
 	for _, rpc := range state.KnownRPCs() {
-		node := NewNode(g.NewNode(), rpc, "cadetblue")
+		var node *Node
+		if slices.ContainsFunc(highlightNodes, func(n string) bool {
+			return n == rpc.Moniker || n == rpc.IP
+		}) {
+			node = NewNode(g.NewNode(), rpc, "crimson")
+			highlightedNodes = append(highlightedNodes, node)
+		} else {
+			node = NewNode(g.NewNode(), rpc, "cadetblue")
+		}
+
 		nodeIDs[rpc.URL] = node.ID()
 		g.AddNode(node)
 	}

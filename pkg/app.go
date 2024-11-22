@@ -80,7 +80,7 @@ func (a *App) Start() {
 func (a *App) ServeTopology() {
 	_ = tmhttp.NewServer(
 		a.Config.TopologyListenAddr,
-		topology.WithHTTPTopologyAPI(a.State),
+		topology.WithHTTPTopologyAPI(a.State, a.Config.TopologyHighlightNodes),
 	).Serve()
 }
 
@@ -112,7 +112,7 @@ func (a *App) CrawlRPCURLs() {
 
 					a.State.AddRPCPeers(rpc.URL, netInfo.Peers)
 					for _, peer := range netInfo.Peers {
-						a.mbRPCURLs.Deliver(types.RPC{URL: peer.URL(), Moniker: peer.NodeInfo.Moniker})
+						a.mbRPCURLs.Deliver(types.RPC{IP: peer.RemoteIP, URL: peer.URL(), Moniker: peer.NodeInfo.Moniker})
 					}
 				}()
 			}

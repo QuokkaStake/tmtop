@@ -7,24 +7,25 @@ import (
 )
 
 type InputConfig struct {
-	RPCHost               string
-	ProviderRPCHost       string
-	ConsumerID            string
-	RefreshRate           time.Duration
-	ValidatorsRefreshRate time.Duration
-	ChainInfoRefreshRate  time.Duration
-	UpgradeRefreshRate    time.Duration
-	BlockTimeRefreshRate  time.Duration
-	ChainType             string
-	Verbose               bool
-	DisableEmojis         bool
-	DebugFile             string
-	HaltHeight            int64
-	BlocksBehind          uint64
-	LCDHost               string
-	Timezone              string
-	WithTopologyAPI       bool
-	TopologyListenAddr    string
+	RPCHost                string
+	ProviderRPCHost        string
+	ConsumerID             string
+	RefreshRate            time.Duration
+	ValidatorsRefreshRate  time.Duration
+	ChainInfoRefreshRate   time.Duration
+	UpgradeRefreshRate     time.Duration
+	BlockTimeRefreshRate   time.Duration
+	ChainType              string
+	Verbose                bool
+	DisableEmojis          bool
+	DebugFile              string
+	HaltHeight             int64
+	BlocksBehind           uint64
+	LCDHost                string
+	Timezone               string
+	WithTopologyAPI        bool
+	TopologyListenAddr     string
+	TopologyHighlightNodes []string
 }
 
 type ChainType string
@@ -85,48 +86,50 @@ func ParseAndValidateConfig(input InputConfig) (*Config, error) {
 	}
 
 	config := &Config{
-		RPCHost:               input.RPCHost,
-		ProviderRPCHost:       input.ProviderRPCHost,
-		ConsumerID:            input.ConsumerID,
-		RefreshRate:           input.RefreshRate,
-		ValidatorsRefreshRate: input.ValidatorsRefreshRate,
-		ChainInfoRefreshRate:  input.ChainInfoRefreshRate,
-		UpgradeRefreshRate:    input.UpgradeRefreshRate,
-		BlockTimeRefreshRate:  input.BlockTimeRefreshRate,
-		ChainType:             chainType,
-		Verbose:               input.Verbose,
-		DisableEmojis:         input.DisableEmojis,
-		DebugFile:             input.DebugFile,
-		HaltHeight:            input.HaltHeight,
-		BlocksBehind:          input.BlocksBehind,
-		LCDHost:               input.LCDHost,
-		Timezone:              timezone,
-		WithTopologyAPI:       input.WithTopologyAPI,
-		TopologyListenAddr:    input.TopologyListenAddr,
+		RPCHost:                input.RPCHost,
+		ProviderRPCHost:        input.ProviderRPCHost,
+		ConsumerID:             input.ConsumerID,
+		RefreshRate:            input.RefreshRate,
+		ValidatorsRefreshRate:  input.ValidatorsRefreshRate,
+		ChainInfoRefreshRate:   input.ChainInfoRefreshRate,
+		UpgradeRefreshRate:     input.UpgradeRefreshRate,
+		BlockTimeRefreshRate:   input.BlockTimeRefreshRate,
+		ChainType:              chainType,
+		Verbose:                input.Verbose,
+		DisableEmojis:          input.DisableEmojis,
+		DebugFile:              input.DebugFile,
+		HaltHeight:             input.HaltHeight,
+		BlocksBehind:           input.BlocksBehind,
+		LCDHost:                input.LCDHost,
+		Timezone:               timezone,
+		WithTopologyAPI:        input.WithTopologyAPI,
+		TopologyListenAddr:     input.TopologyListenAddr,
+		TopologyHighlightNodes: input.TopologyHighlightNodes,
 	}
 
 	return config, nil
 }
 
 type Config struct {
-	RPCHost               string
-	ProviderRPCHost       string
-	ConsumerID            string
-	RefreshRate           time.Duration
-	ValidatorsRefreshRate time.Duration
-	ChainInfoRefreshRate  time.Duration
-	UpgradeRefreshRate    time.Duration
-	BlockTimeRefreshRate  time.Duration
-	ChainType             ChainType
-	Verbose               bool
-	DisableEmojis         bool
-	DebugFile             string
-	HaltHeight            int64
-	BlocksBehind          uint64
-	LCDHost               string
-	Timezone              *time.Location
-	WithTopologyAPI       bool
-	TopologyListenAddr    string
+	RPCHost                string
+	ProviderRPCHost        string
+	ConsumerID             string
+	RefreshRate            time.Duration
+	ValidatorsRefreshRate  time.Duration
+	ChainInfoRefreshRate   time.Duration
+	UpgradeRefreshRate     time.Duration
+	BlockTimeRefreshRate   time.Duration
+	ChainType              ChainType
+	Verbose                bool
+	DisableEmojis          bool
+	DebugFile              string
+	HaltHeight             int64
+	BlocksBehind           uint64
+	LCDHost                string
+	Timezone               *time.Location
+	WithTopologyAPI        bool
+	TopologyListenAddr     string
+	TopologyHighlightNodes []string
 }
 
 func (c Config) GetProviderOrConsumerHost() string {
