@@ -85,7 +85,7 @@ func (a *App) ServeTopology() {
 }
 
 func (a *App) CrawlRPCURLs() {
-	a.mbRPCURLs.Deliver(types.RPC{URL: a.Config.RPCHost})
+	a.fetchNewPeers(a.Config.RPCHost)
 	timer := time.NewTimer(15 * time.Second)
 
 	for {
@@ -104,16 +104,7 @@ func (a *App) CrawlRPCURLs() {
 				go func() {
 					defer wg.Done()
 
-					netInfo, err := a.Aggregator.GetNetInfo(rpc.URL)
-					if err != nil {
-						a.LogChannel <- fmt.Sprintf("error getting net_info from %s: %v", rpc.URL, err)
-						return
-					}
-
-					a.State.AddRPCPeers(rpc.URL, netInfo.Peers)
-					for _, peer := range netInfo.Peers {
-						a.mbRPCURLs.Deliver(types.RPC{IP: peer.RemoteIP, URL: peer.URL(), Moniker: peer.NodeInfo.Moniker})
-					}
+					a.fetchNewPeers(rpc.URL)
 				}()
 			}
 			wg.Wait()
@@ -126,6 +117,19 @@ func (a *App) CrawlRPCURLs() {
 			}
 		}
 
+	}
+}
+
+func (a *App) fetchNewPeers(rpcURL string) {
+	netInfo, err := a.Aggregator.GetNetInfo(rpcURL)
+	if err != nil {
+		a.LogChannel <- fmt.Sprintf("error getting net_info from %s: %v", rpcURL, err)
+		return
+	}
+
+	a.State.AddRPCPeers(rpcURL, netInfo.Peers)
+	for _, peer := range netInfo.Peers {
+		a.mbRPCURLs.Deliver(types.NewRPCFromPeer(peer))
 	}
 }
 

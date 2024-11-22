@@ -35,14 +35,22 @@ type State struct {
 }
 
 type RPC struct {
+	ID      string
 	IP      string
 	URL     string
 	Moniker string
 }
 
+func NewRPCFromPeer(peer Peer) RPC {
+	return RPC{
+		ID:      string(peer.NodeInfo.DefaultNodeID),
+		IP:      peer.RemoteIP,
+		URL:     peer.URL(),
+		Moniker: peer.NodeInfo.Moniker,
+	}
+}
+
 func NewState(firstRPC string) *State {
-	knownRPCs := utils.NewOrderedMap[string, RPC]()
-	knownRPCs.Set(firstRPC, RPC{"", firstRPC, ""})
 	return &State{
 		Height:          0,
 		Round:           0,
@@ -52,7 +60,7 @@ func NewState(firstRPC string) *State {
 		StartTime:       time.Now(),
 		BlockTime:       0,
 		currentRPC:      firstRPC,
-		knownRPCs:       knownRPCs,
+		knownRPCs:       utils.NewOrderedMap[string, RPC](),
 		rpcPeers:        utils.NewOrderedMap[string, []Peer](),
 		muRPCs:          &sync.RWMutex{},
 	}
@@ -81,7 +89,10 @@ func (s *State) CurrentRPC() RPC {
 	s.muRPCs.RLock()
 	defer s.muRPCs.RUnlock()
 
-	rpc, _ := s.knownRPCs.Get(s.currentRPC)
+	rpc, ok := s.knownRPCs.Get(s.currentRPC)
+	if !ok {
+		return RPC{URL: s.currentRPC}
+	}
 	return rpc
 }
 

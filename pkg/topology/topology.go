@@ -16,10 +16,12 @@ func ComputeTopology(state *types.State, highlightNodes []string) (graph.Graph, 
 	var highlightedNodes []*Node
 	g := simple.NewUndirectedGraph()
 
+	// Render all known RPCs
 	for _, rpc := range state.KnownRPCs() {
 		var node *Node
+		// Highlight nodes matched by ID, IP, or moniker
 		if slices.ContainsFunc(highlightNodes, func(n string) bool {
-			return n == rpc.Moniker || n == rpc.IP
+			return n == rpc.ID || n == rpc.IP || n == rpc.Moniker
 		}) {
 			node = NewNode(g.NewNode(), rpc, "crimson")
 			highlightedNodes = append(highlightedNodes, node)
@@ -31,6 +33,7 @@ func ComputeTopology(state *types.State, highlightNodes []string) (graph.Graph, 
 		g.AddNode(node)
 	}
 
+	// Render all edges between nodes
 	for _, rpc := range state.KnownRPCs() {
 		rpcID, ok := nodeIDs[rpc.URL]
 		if !ok {
@@ -47,6 +50,7 @@ func ComputeTopology(state *types.State, highlightNodes []string) (graph.Graph, 
 		}
 	}
 
+	// Highlight the shortest paths between highlighted nodes
 	for i, n := range highlightedNodes {
 		paths := path.DijkstraFrom(n, g)
 		for j := i + 1; j < len(highlightedNodes); j++ {

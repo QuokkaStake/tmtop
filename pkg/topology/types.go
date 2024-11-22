@@ -8,20 +8,22 @@ import (
 
 type Node struct {
 	graph.Node
-	label, color string
+	moniker, id, url, color string
 }
 
 func NewNode(n graph.Node, rpc types.RPC, color string) *Node {
 	return &Node{
-		Node:  n,
-		label: rpc.Moniker + "\n(" + rpc.URL + ")",
-		color: color,
+		Node:    n,
+		moniker: rpc.Moniker,
+		id:      rpc.ID,
+		url:     rpc.URL,
+		color:   color,
 	}
 }
 
 func (n *Node) Attributes() []encoding.Attribute {
 	return []encoding.Attribute{
-		{Key: "label", Value: n.label},
+		{Key: "label", Value: n.moniker + "\n" + n.id + "\n(" + n.url + ")"},
 		{Key: "style", Value: "filled"},
 		{Key: "color", Value: n.color},
 	}
