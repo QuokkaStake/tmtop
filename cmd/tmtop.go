@@ -27,6 +27,7 @@ func Execute(inputConfig configPkg.InputConfig, args []string) {
 
 	app := pkg.NewApp(config, version)
 	app.Start()
+	// select {}
 }
 
 func main() {

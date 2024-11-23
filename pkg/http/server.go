@@ -1,9 +1,10 @@
 package http
 
 import (
-	"github.com/gorilla/mux"
 	"net/http"
 	"time"
+
+	"github.com/gorilla/mux"
 )
 
 type Server struct {

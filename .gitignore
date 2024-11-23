@@ -7,4 +7,7 @@ dist
 **/.DS_Store
 out.txt
 
+node_modules/
+
 *.sublime-*
+.omega.json

@@ -275,7 +275,7 @@ func (w *Wrapper) SetState(state *types.State) {
 	w.LastRoundTableData.SetValidators(state.GetValidatorsWithInfo(), state.ConsensusStateError)
 	w.AllRoundsTableData.SetValidators(state.GetValidatorsWithInfoAndAllRoundVotes())
 	w.NetInfoTableData.SetNetInfo(state.NetInfo)
-	w.RPCsTableData.SetKnownRPCs(state.KnownRPCs())
+	w.RPCsTableData.SetKnownRPCs(state.KnownRPCs().Values())
 
 	w.ConsensusInfoTextView.Clear()
 	w.ChainInfoTextView.Clear()

@@ -85,6 +85,16 @@ func (m *OrderedMap[K, V]) String() string {
 	return sb.String()
 }
 
+func (m *OrderedMap[K, V]) Iter() func(func(k K, v V) bool) {
+	return func(yield func(k K, v V) bool) {
+		for _, k := range m.keys {
+			if !yield(k, m.values[k]) {
+				return
+			}
+		}
+	}
+}
+
 // Range iterates over the map in order, calling the given function for each key-value pair
 func (m *OrderedMap[K, V]) Range(f func(key K, value V)) {
 	for _, key := range m.keys {
@@ -111,4 +121,12 @@ func (m *OrderedMap[K, V]) GetByIndex(index int) (K, V, bool) {
 	}
 	key := m.keys[index]
 	return key, m.values[key], true
+}
+
+func (m *OrderedMap[K, V]) Copy() *OrderedMap[K, V] {
+	newMap := NewOrderedMap[K, V]()
+	for _, key := range m.keys {
+		newMap.Set(key, m.values[key])
+	}
+	return newMap
 }

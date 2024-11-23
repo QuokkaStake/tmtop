@@ -61,6 +61,7 @@ func NewApp(config *configPkg.Config, version string) *App {
 func (a *App) Start() {
 	if a.Config.WithTopologyAPI {
 		go a.ServeTopology()
+		topology.LogChannel = a.LogChannel
 	}
 
 	go a.CrawlRPCURLs()
@@ -81,6 +82,8 @@ func (a *App) ServeTopology() {
 	_ = tmhttp.NewServer(
 		a.Config.TopologyListenAddr,
 		topology.WithHTTPTopologyAPI(a.State, a.Config.TopologyHighlightNodes),
+		topology.WithHTTPPeersAPI(a.State),
+		topology.WithFrontendStaticAssets(),
 	).Serve()
 }
 
@@ -110,7 +113,7 @@ func (a *App) CrawlRPCURLs() {
 			wg.Wait()
 
 		case <-timer.C:
-			for _, rpc := range a.State.KnownRPCs() {
+			for _, rpc := range a.State.KnownRPCs().Iter() {
 				if time.Since(a.rpcURLsLastFetch[rpc.URL]) >= 15*time.Second {
 					a.mbRPCURLs.Deliver(rpc)
 				}

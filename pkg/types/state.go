@@ -35,10 +35,10 @@ type State struct {
 }
 
 type RPC struct {
-	ID      string
-	IP      string
-	URL     string
-	Moniker string
+	ID      string `json:"id"`
+	IP      string `json:"ip"`
+	URL     string `json:"url"`
+	Moniker string `json:"moniker"`
 }
 
 func NewRPCFromPeer(peer Peer) RPC {
@@ -103,11 +103,11 @@ func (s *State) SetCurrentRPCURL(rpcURL string) {
 	s.currentRPC = rpcURL
 }
 
-func (s *State) KnownRPCs() []RPC {
+func (s *State) KnownRPCs() *utils.OrderedMap[string, RPC] {
 	s.muRPCs.RLock()
 	defer s.muRPCs.RUnlock()
 
-	return s.knownRPCs.Values()
+	return s.knownRPCs.Copy()
 }
 
 func (s *State) AddKnownRPC(rpc RPC) {
@@ -141,8 +141,8 @@ func (s *State) AddRPCPeers(rpcURL string, peers []Peer) {
 }
 
 func (s *State) RPCPeers(rpcURL string) []Peer {
-	s.muRPCs.Lock()
-	defer s.muRPCs.Unlock()
+	s.muRPCs.RLock()
+	defer s.muRPCs.RUnlock()
 
 	peers, _ := s.rpcPeers.Get(rpcURL)
 	return peers
