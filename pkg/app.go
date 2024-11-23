@@ -81,7 +81,7 @@ func (a *App) Start() {
 func (a *App) ServeTopology() {
 	_ = tmhttp.NewServer(
 		a.Config.TopologyListenAddr,
-		topology.WithHTTPTopologyAPI(a.State, a.Config.TopologyHighlightNodes),
+		topology.WithHTTPTopologyAPI(a.State),
 		topology.WithHTTPPeersAPI(a.State),
 		topology.WithFrontendStaticAssets(),
 	).Serve()

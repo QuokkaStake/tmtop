@@ -60,7 +60,6 @@ func main() {
 	rootCmd.PersistentFlags().StringVar(&config.Timezone, "timezone", "", "Timezone to display dates in")
 	rootCmd.PersistentFlags().BoolVar(&config.WithTopologyAPI, "with-topology-api", false, "Enable topology API")
 	rootCmd.PersistentFlags().StringVar(&config.TopologyListenAddr, "topology-listen-addr", "0.0.0.0:8080", "The address on which to serve topology API")
-	rootCmd.PersistentFlags().StringSliceVar(&config.TopologyHighlightNodes, "topology-highlight-nodes", nil, "The nodes to highlight in the produced topology graph, either by node id, IP address or moniker")
 
 	if err := rootCmd.Execute(); err != nil {
 		logger.GetDefaultLogger().Fatal().Err(err).Msg("Could not start application")

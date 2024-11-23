@@ -14,7 +14,7 @@ import (
 	"main/pkg/types"
 )
 
-func WithHTTPTopologyAPI(state *types.State, highlightNodes []string) tmhttp.Option {
+func WithHTTPTopologyAPI(state *types.State) tmhttp.Option {
 	return tmhttp.WithRoute("GET", "/topology", utils.UnrestrictedCors(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var req ComputeTopologyRequest
 		err := utils.UnmarshalHTTPRequest(&req, r)
