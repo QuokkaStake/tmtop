@@ -88,7 +88,8 @@ func (a *App) ServeTopology() {
 }
 
 func (a *App) CrawlRPCURLs() {
-	a.fetchNewPeers(a.Config.RPCHost)
+	a.mbRPCURLs.Deliver(types.RPC{URL: a.Config.RPCHost})
+	// a.fetchNewPeers(a.Config.RPCHost)
 	timer := time.NewTimer(15 * time.Second)
 
 	for {

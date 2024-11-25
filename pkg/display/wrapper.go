@@ -22,7 +22,7 @@ const (
 const (
 	DefaultColumnsCount = 3
 	RowsAmount          = 10
-	DebugBlockHeight    = 2
+	DebugBlockHeight    = 8
 	DefaultMode         = ModeLastRound
 )
 

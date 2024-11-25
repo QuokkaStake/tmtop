@@ -23,18 +23,52 @@ func WithHTTPTopologyAPI(state *types.State) tmhttp.Option {
 			return
 		}
 
-		topoGraph, err := ComputeTopology(state, req)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("Could not compute topology: %s", err.Error()), http.StatusInternalServerError)
-			return
-		}
+		if req.Format == "dot" {
+			topoGraph, err := ComputeTopologyDOT(state, req)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("Could not compute topology: %s", err.Error()), http.StatusInternalServerError)
+				return
+			}
 
-		w.Header().Set("Content-Type", "text/vnd.graphviz")
-		if err := RenderTopology(topoGraph, w); err != nil {
-			http.Error(w, fmt.Sprintf("Could not render topology: %s", err.Error()), http.StatusInternalServerError)
-			return
+			w.Header().Set("Content-Type", "text/vnd.graphviz")
+			if err := RenderTopologyDOT(topoGraph, w); err != nil {
+				http.Error(w, fmt.Sprintf("Could not render topology: %s", err.Error()), http.StatusInternalServerError)
+				return
+			}
+		} else {
+			topoGraph, err := ComputeTopologyJSON(state, req)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("Could not compute topology: %s", err.Error()), http.StatusInternalServerError)
+				return
+			}
+
+			if err := RenderTopologyJSON(topoGraph, w); err != nil {
+				http.Error(w, fmt.Sprintf("Could not render topology: %s", err.Error()), http.StatusInternalServerError)
+				return
+			}
 		}
 	})))
+
+	// return tmhttp.WithRoute("GET", "/topology", utils.UnrestrictedCors(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	// 	var req ComputeTopologyRequest
+	// 	err := utils.UnmarshalHTTPRequest(&req, r)
+	// 	if err != nil {
+	// 		http.Error(w, fmt.Sprintf("bad request: %s", err.Error()), http.StatusBadRequest)
+	// 		return
+	// 	}
+
+	// 	topoGraph, err := ComputeTopology(state, req)
+	// 	if err != nil {
+	// 		http.Error(w, fmt.Sprintf("Could not compute topology: %s", err.Error()), http.StatusInternalServerError)
+	// 		return
+	// 	}
+
+	// 	w.Header().Set("Content-Type", "text/vnd.graphviz")
+	// 	if err := RenderTopology(topoGraph, w); err != nil {
+	// 		http.Error(w, fmt.Sprintf("Could not render topology: %s", err.Error()), http.StatusInternalServerError)
+	// 		return
+	// 	}
+	// })))
 }
 
 func WithHTTPPeersAPI(state *types.State) tmhttp.Option {
