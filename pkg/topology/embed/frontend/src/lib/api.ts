@@ -7,7 +7,7 @@ export type ComputeTopologyParams = {
     // highlightNodes?: string[]
 }
 
-export async function fetchTopology(params: ComputeTopologyParams): Promise<string> {
+export async function fetchTopologyDOT(params: ComputeTopologyParams): Promise<string> {
     params.crawlDistance = params.crawlDistance || 1
 
     const queryParams = queryString.stringify({
@@ -15,6 +15,7 @@ export async function fetchTopology(params: ComputeTopologyParams): Promise<stri
         includeNodes: params.includeNodes,
         crawlDistance: params.crawlDistance,
         // highlightNodes: params.highlightNodes
+        format: 'dot',
     })
     console.log('params', params)
     console.log('queryParams', queryParams)
@@ -31,6 +32,27 @@ export async function fetchTopology(params: ComputeTopologyParams): Promise<stri
     }
 
     return await response.text()
+}
+
+export async function fetchTopologyJSON(params: ComputeTopologyParams): Promise<any> {
+    params.crawlDistance = params.crawlDistance || 1
+
+    const queryParams = queryString.stringify({
+        includeNodes: params.includeNodes,
+        crawlDistance: params.crawlDistance,
+    })
+
+    const response = await fetch(`http://localhost:8080/topology?${queryParams}`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/json',
+        },
+    })
+
+    if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+    }
+    return await response.json()
 }
 
 export type RPC = {
