@@ -8,7 +8,27 @@ import (
 	"time"
 
 	"github.com/btcsuite/btcutil/bech32"
+	"github.com/cometbft/cometbft/crypto"
+	"github.com/cometbft/cometbft/crypto/ed25519"
+	comet_secp256k1 "github.com/cometbft/cometbft/crypto/secp256k1"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
+
+func PubKeyToPeerID(pubKeyBytes string) (string, error) {
+	// Convert to ed25519 public key
+	pubKey := make(ed25519.PubKey, ed25519.PubKeySize)
+	copy(pubKey[:], pubKeyBytes)
+
+	// Get the peer ID from the public key
+	peerID := crypto.Address(pubKey).String()
+	return peerID, nil
+}
+
+func ValidatorAddr(pubkeyBytes []byte) string {
+	pubkey := comet_secp256k1.PubKey(pubkeyBytes)
+	pubKeyConvertedToAddress := sdk.ValAddress(pubkey.Address().Bytes())
+	return pubKeyConvertedToAddress.String()
+}
 
 func MustParseInt64(source string) int64 {
 	result, err := strconv.ParseInt(source, 10, 64)

@@ -8,6 +8,15 @@ importers:
 
   .:
     dependencies:
+      graphology:
+        specifier: ^0.25.4
+        version: 0.25.4(graphology-types@0.24.8)
+      graphology-layout:
+        specifier: ^0.6.1
+        version: 0.6.1(graphology-types@0.24.8)
+      graphology-layout-forceatlas2:
+        specifier: ^0.10.1
+        version: 0.10.1(graphology-types@0.24.8)
       graphviz-react:
         specifier: ^1.2.5
         version: 1.2.5(react@18.3.1)

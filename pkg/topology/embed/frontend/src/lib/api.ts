@@ -1,10 +1,9 @@
 import queryString from 'query-string'
 
 export type ComputeTopologyParams = {
-    // currentHomeNode: string
     includeNodes?: string[]
     crawlDistance?: number
-    // highlightNodes?: string[]
+    minBytesSec?: number
 }
 
 export async function fetchTopologyDOT(params: ComputeTopologyParams): Promise<string> {
@@ -14,6 +13,7 @@ export async function fetchTopologyDOT(params: ComputeTopologyParams): Promise<s
         // currentHomeNode: params.currentHomeNode,
         includeNodes: params.includeNodes,
         crawlDistance: params.crawlDistance,
+        minBytesSec: params.minBytesSec,
         // highlightNodes: params.highlightNodes
         format: 'dot',
     })
@@ -34,12 +34,18 @@ export async function fetchTopologyDOT(params: ComputeTopologyParams): Promise<s
     return await response.text()
 }
 
-export async function fetchTopologyJSON(params: ComputeTopologyParams): Promise<any> {
+export type JSONResponse = {
+    nodes?: RPC[]
+    conns?: Conn[]
+}
+
+export async function fetchTopologyJSON(params: ComputeTopologyParams): Promise<JSONResponse> {
     params.crawlDistance = params.crawlDistance || 1
 
     const queryParams = queryString.stringify({
         includeNodes: params.includeNodes,
         crawlDistance: params.crawlDistance,
+        minBytesSec: params.minBytesSec,
     })
 
     const response = await fetch(`http://localhost:8080/topology?${queryParams}`, {
@@ -56,9 +62,25 @@ export async function fetchTopologyJSON(params: ComputeTopologyParams): Promise<
 }
 
 export type RPC = {
+    id: string
     ip: string
     url: string
     moniker: string
+    validatorAddress: string
+    validatorMoniker: string
+}
+
+export type Conn = {
+    from: string
+    to: string
+    connectionStatus: {
+        send_monitor: {
+            avg_rate: number
+        }
+        recv_monitor: {
+            avg_rate: number
+        }
+    }
 }
 
 export async function fetchPeers(): Promise<RPC[]> {
