@@ -3,6 +3,7 @@ package types
 import (
 	"fmt"
 	"math"
+	"net/url"
 	"reflect"
 	"strconv"
 	"time"
@@ -25,7 +26,11 @@ type Peer struct {
 }
 
 func (p Peer) URL() string {
-	return "http://" + p.RemoteIP + ":26657"
+	u, err := url.Parse(p.NodeInfo.Other.RPCAddress)
+	if err != nil {
+		return "http://" + p.RemoteIP + ":26657"
+	}
+	return "http" + "://" + p.RemoteIP + ":" + u.Port()
 }
 
 type DefaultNodeInfo struct {

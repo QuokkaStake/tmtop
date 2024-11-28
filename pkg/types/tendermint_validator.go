@@ -17,6 +17,12 @@ type ValidatorsResult struct {
 }
 
 type TendermintValidator struct {
-	Address     string `json:"address"`
-	VotingPower string `json:"voting_power"`
+	Address     string                    `json:"address"`
+	VotingPower string                    `json:"voting_power"`
+	PubKey      TendermintValidatorPubKey `json:"pub_key"`
+}
+
+type TendermintValidatorPubKey struct {
+	Type         string `json:"type"`
+	PubKeyBase64 string `json:"value"`
 }

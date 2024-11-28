@@ -6,6 +6,7 @@ type ChainValidator struct {
 	RawAddress         string
 	AssignedAddress    string
 	RawAssignedAddress string
+	ConsensusPubkey    []byte
 }
 
 type ChainValidators []ChainValidator

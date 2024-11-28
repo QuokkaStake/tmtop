@@ -1,9 +1,13 @@
 package types
 
 import (
+	"encoding/base64"
 	"errors"
 	"math/big"
 	"strings"
+
+	"github.com/cometbft/cometbft/crypto/ed25519"
+	"github.com/cometbft/cometbft/p2p"
 )
 
 func ValidatorsWithLatestRoundFromTendermintResponse(
@@ -24,10 +28,23 @@ func ValidatorsWithLatestRoundFromTendermintResponse(
 			return nil, errors.New("error setting string")
 		}
 
+		pubkey := make([]byte, 0, p2p.IDByteLength)
+		defer func() {
+			if perr := recover(); perr != nil {
+				panic("BAD BASE64: " + validator.PubKey.PubKeyBase64)
+			}
+		}()
+		pubkey, err := base64.StdEncoding.DecodeString(validator.PubKey.PubKeyBase64)
+		if err != nil {
+			return nil, err
+		}
+
 		validators[index] = ValidatorWithRoundVote{
 			Validator: Validator{
 				Address:     validator.Address,
 				VotingPower: vp,
+				PubKey:      pubkey,
+				PeerID:      p2p.PubKeyToID(ed25519.PubKey(pubkey)),
 			},
 			RoundVote: RoundVote{
 				Address:    validator.Address,
@@ -65,9 +82,16 @@ func ValidatorsWithAllRoundsFromTendermintResponse(
 			return ValidatorsWithAllRoundsVotes{}, errors.New("error setting string")
 		}
 
+		pubkey, err := base64.StdEncoding.DecodeString(validator.PubKey.PubKeyBase64)
+		if err != nil {
+			return ValidatorsWithAllRoundsVotes{}, err
+		}
+
 		validators[index] = Validator{
 			Address:     validator.Address,
 			VotingPower: vp,
+			PubKey:      pubkey,
+			PeerID:      p2p.PubKeyToID(ed25519.PubKey(pubkey)),
 		}
 	}
 

@@ -24,57 +24,50 @@ func WithHTTPTopologyAPI(state *types.State) tmhttp.Option {
 		}
 
 		if req.Format == "dot" {
-			topoGraph, err := ComputeTopologyDOT(state, req)
+			graph, err := ComputeTopology(state, req)
 			if err != nil {
-				http.Error(w, fmt.Sprintf("Could not compute topology: %s", err.Error()), http.StatusInternalServerError)
+				http.Error(w, fmt.Sprintf("could not compute topology: %s", err.Error()), http.StatusInternalServerError)
+				return
+			}
+
+			topoGraph, err := ComputeTopologyDOT(graph, req)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("could not convert topology to dot: %s", err.Error()), http.StatusInternalServerError)
 				return
 			}
 
 			w.Header().Set("Content-Type", "text/vnd.graphviz")
 			if err := RenderTopologyDOT(topoGraph, w); err != nil {
-				http.Error(w, fmt.Sprintf("Could not render topology: %s", err.Error()), http.StatusInternalServerError)
-				return
-			}
-		} else {
-			topoGraph, err := ComputeTopologyJSON(state, req)
-			if err != nil {
-				http.Error(w, fmt.Sprintf("Could not compute topology: %s", err.Error()), http.StatusInternalServerError)
+				http.Error(w, fmt.Sprintf("could not marshal dot: %s", err.Error()), http.StatusInternalServerError)
 				return
 			}
 
-			if err := RenderTopologyJSON(topoGraph, w); err != nil {
-				http.Error(w, fmt.Sprintf("Could not render topology: %s", err.Error()), http.StatusInternalServerError)
+		} else {
+			topoGraph, err := ComputeTopology(state, req)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("could not compute topology: %s", err.Error()), http.StatusInternalServerError)
+				return
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			if err := json.NewEncoder(w).Encode(topoGraph); err != nil {
+				http.Error(w, fmt.Sprintf("could not marshal json: %s", err.Error()), http.StatusInternalServerError)
 				return
 			}
 		}
 	})))
-
-	// return tmhttp.WithRoute("GET", "/topology", utils.UnrestrictedCors(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	// 	var req ComputeTopologyRequest
-	// 	err := utils.UnmarshalHTTPRequest(&req, r)
-	// 	if err != nil {
-	// 		http.Error(w, fmt.Sprintf("bad request: %s", err.Error()), http.StatusBadRequest)
-	// 		return
-	// 	}
-
-	// 	topoGraph, err := ComputeTopology(state, req)
-	// 	if err != nil {
-	// 		http.Error(w, fmt.Sprintf("Could not compute topology: %s", err.Error()), http.StatusInternalServerError)
-	// 		return
-	// 	}
-
-	// 	w.Header().Set("Content-Type", "text/vnd.graphviz")
-	// 	if err := RenderTopology(topoGraph, w); err != nil {
-	// 		http.Error(w, fmt.Sprintf("Could not render topology: %s", err.Error()), http.StatusInternalServerError)
-	// 		return
-	// 	}
-	// })))
 }
 
 func WithHTTPPeersAPI(state *types.State) tmhttp.Option {
 	return tmhttp.WithRoute("GET", "/peers", utils.UnrestrictedCors(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		peers := state.KnownRPCs().Values()
 		_ = json.NewEncoder(w).Encode(peers)
+	})))
+}
+
+func WithHTTPDebugAPI(state *types.State) tmhttp.Option {
+	return tmhttp.WithRoute("GET", "/debug", utils.UnrestrictedCors(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewEncoder(w).Encode(state.ChainValidators)
 	})))
 }
 
