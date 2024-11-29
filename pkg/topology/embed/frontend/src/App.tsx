@@ -14,7 +14,8 @@ function App() {
     const [graph, setGraph] = useState<{ nodes: InternalGraphNode[], edges: InternalGraphEdge[] }>({ nodes: [], edges: [] })
     const [apiData, setAPIData] = useState<JSONResponse>({ nodes: [], conns: [] })
     const [clickedEdges, setClickedEdges] = useState<Record<string, boolean>>({})
-    const [minBytesSec, setMinBytesSec] = useState(0)
+    const [minBytesSec, setMinBytesSec] = useState<Number | null>(null)
+    const [selectedNode, setSelectedNode] = useState<RPC | null>(null)
     const nodeRef = useRef(new Map<string, InternalGraphPosition>())
     const graphRef = useRef<GraphCanvasRef | null>(null)
 
@@ -23,7 +24,7 @@ function App() {
         const graph = await fetchTopologyJSON({
             ...params,
             crawlDistance,
-            minBytesSec,
+            minBytesSec: minBytesSec || null,
             includeNodes: Object.keys(selectedPeers).filter(url => selectedPeers[url]),
         })
         setAPIData(graph)
@@ -45,7 +46,7 @@ function App() {
         }))
 
         const edges = (apiData.conns || [])
-            .filter(conn => conn.connectionStatus.send_monitor.avg_rate + conn.connectionStatus.recv_monitor.avg_rate >= minBytesSec)
+            .filter(conn => conn.connectionStatus.send_monitor.avg_rate + conn.connectionStatus.recv_monitor.avg_rate >= (minBytesSec || 0).valueOf())
             .map(conn => ({
                 source: conn.from,
                 target: conn.to,
@@ -98,11 +99,35 @@ function App() {
         setClickedEdges({ ...clickedEdges, [edge.id]: !clickedEdges[edge.id] })
     }
 
+    function handleNodeClick(node: InternalGraphNode) {
+        const selectedRPC = (apiData.nodes || []).find(n => n.id === node.id)
+        if (selectedRPC) {
+            const connectedPeers = (apiData.conns || [])
+                .filter(conn => conn.from === selectedRPC.id || conn.to === selectedRPC.id)
+                .map(conn => {
+                    const peerId = conn.from === selectedRPC.id ? conn.to : conn.from
+                    const peer = (apiData.nodes || []).find(n => n.id === peerId)
+                    return {
+                        peer,
+                        connectionStatus: conn.connectionStatus,
+                        isOutbound: conn.from === selectedRPC.id
+                    }
+                })
+            setSelectedNode({ ...selectedRPC, connectedPeers })
+        } else {
+            setSelectedNode(null)
+        }
+    }
+
+    function handleCanvasClick() {
+        setSelectedNode(null)
+    }
+
     const {
         selections,
         actives,
-        onNodeClick,
-        onCanvasClick
+        onNodeClick: selectionNodeClick,
+        onCanvasClick: selectionCanvasClick
     } = useSelection({
         ref: graphRef,
         nodes: nodes,
@@ -146,9 +171,30 @@ function App() {
                             nodeRef.current.set(node.id, node.position)
                         }}
                         onEdgeClick={onEdgeClick}
-                        selections={selections} actives={actives} onCanvasClick={onCanvasClick} onNodeClick={onNodeClick}
+                        selections={selections}
+                        actives={actives}
+                        onCanvasClick={(event) => {
+                            handleCanvasClick()
+                            selectionCanvasClick(event)
+                        }}
+                        onNodeClick={(node, event) => {
+                            handleNodeClick(node)
+                            selectionNodeClick(node, event)
+                        }}
                     />
                 </div>
+                {selectedNode && (
+                    <div style={{
+                        position: 'absolute',
+                        top: 0,
+                        right: 0,
+                        width: '450px',
+                        height: '100vh',
+                        backgroundColor: 'rgba(36, 36, 36, 0.9)',
+                        padding: '20px',
+                        overflowY: 'auto'
+                    }}><NodeDetails node={selectedNode} /></div>
+                )}
             </div>
         </>
     )
@@ -225,6 +271,72 @@ function Sidebar(props: {
             </div>
             <button onClick={() => setSidebarOpen(true)} style={{ position: 'absolute', top: 16, left: 16, zIndex: 9 }}>Open sidebar</button>
         </>
+    )
+}
+
+type NodeWithPeers = RPC & {
+    connectedPeers: Array<{
+        peer: RPC | undefined,
+        connectionStatus: Conn['connectionStatus'],
+        isOutbound: boolean
+    }>
+}
+
+function NodeDetails({ node }: { node: NodeWithPeers }) {
+    return (
+        <div>
+            <h2>{node.moniker}</h2>
+            <table>
+                <tbody>
+                    <tr><td>ID:</td><td>{node.id}</td></tr>
+                    <tr><td>URL:</td><td>{node.url}</td></tr>
+                    <tr><td>IP:</td><td>{node.ip}</td></tr>
+                    <tr><td>Validator Moniker:</td><td>{node.validatorMoniker || 'N/A'}</td></tr>
+                    <tr><td>Validator Address:</td><td>{node.validatorAddress || 'N/A'}</td></tr>
+                    {Object.entries(node).map(([key, value]) => {
+                        if (typeof value !== 'object' && !['id', 'url', 'ip', 'moniker', 'validatorMoniker', 'validatorAddress'].includes(key)) {
+                            return (
+                                <tr key={key}>
+                                    <td>{key}:</td>
+                                    <td>{String(value)}</td>
+                                </tr>
+                            )
+                        }
+                        return null
+                    })}
+                </tbody>
+            </table>
+            <h3>Connected Peers</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Moniker</th>
+                        <th>Direction</th>
+                        <th>Send Rate</th>
+                        <th>Receive Rate</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {node.connectedPeers.map((peerInfo, index) => (
+                        <tr key={index}>
+                            <td>{peerInfo.peer?.moniker || 'Unknown'}</td>
+                            <td>{peerInfo.isOutbound ? 'Outbound' : 'Inbound'}</td>
+                            <td>{humanizeBytes(peerInfo.connectionStatus.send_monitor.avg_rate)}/s</td>
+                            <td>{humanizeBytes(peerInfo.connectionStatus.recv_monitor.avg_rate)}/s</td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+            <h3>Connection Statistics</h3>
+            <table>
+                <tbody>
+                    <tr><td>Total Send Rate:</td><td>{humanizeBytes(node.connectedPeers.reduce((sum, peer) => sum + peer.connectionStatus.send_monitor.avg_rate, 0))}/s</td></tr>
+                    <tr><td>Total Receive Rate:</td><td>{humanizeBytes(node.connectedPeers.reduce((sum, peer) => sum + peer.connectionStatus.recv_monitor.avg_rate, 0))}/s</td></tr>
+                    <tr><td>Outbound Connections:</td><td>{node.connectedPeers.filter(peer => peer.isOutbound).length}</td></tr>
+                    <tr><td>Inbound Connections:</td><td>{node.connectedPeers.filter(peer => !peer.isOutbound).length}</td></tr>
+                </tbody>
+            </table>
+        </div>
     )
 }
 
