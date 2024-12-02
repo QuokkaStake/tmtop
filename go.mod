@@ -6,16 +6,18 @@ toolchain go1.23.1
 
 require (
 	cosmossdk.io/x/upgrade v0.1.4
-	github.com/brynbellomy/go-utils v0.0.0-20241104013030-c57db69f0fd6
+	github.com/brynbellomy/go-utils v0.0.0-20241122210636-76465f825743
 	github.com/btcsuite/btcutil v0.0.0-20190425235716-9e5f4b9a998d
 	github.com/cometbft/cometbft v0.38.11
 	github.com/cosmos/cosmos-sdk v0.50.9
 	github.com/cosmos/interchain-security/v6 v6.1.0
 	github.com/gdamore/tcell/v2 v2.6.0
+	github.com/gorilla/mux v1.8.1
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/rivo/tview v0.0.0-20231022175332-f7f32ad28104
 	github.com/rs/zerolog v1.33.0
 	github.com/spf13/cobra v1.8.1
+	gonum.org/v1/gonum v0.12.0
 )
 
 require (
@@ -86,7 +88,6 @@ require (
 	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/handlers v1.5.2 // indirect
-	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0 // indirect
@@ -130,7 +131,7 @@ require (
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475 // indirect
 	github.com/rivo/uniseg v0.4.3 // indirect
 	github.com/rogpeppe/go-internal v1.12.0 // indirect
-	github.com/rs/cors v1.11.0 // indirect
+	github.com/rs/cors v1.11.1 // indirect
 	github.com/sagikazarmark/locafero v0.4.0 // indirect
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect
 	github.com/sasha-s/go-deadlock v0.3.1 // indirect

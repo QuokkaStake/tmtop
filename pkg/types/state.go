@@ -3,6 +3,7 @@ package types
 import (
 	"fmt"
 	"main/pkg/utils"
+	"maps"
 	"math/big"
 	"strings"
 	"sync"
@@ -22,8 +23,11 @@ type State struct {
 	BlockTime                    time.Duration
 	NetInfo                      *NetInfo
 
+	validatorsByPeerID map[string]Validator
+
 	currentRPC string
 	knownRPCs  *utils.OrderedMap[string, RPC]
+	rpcPeers   *utils.OrderedMap[string, []Peer]
 	muRPCs     *sync.RWMutex
 
 	ConsensusStateError  error
@@ -34,24 +38,37 @@ type State struct {
 }
 
 type RPC struct {
-	URL     string
-	Moniker string
+	ID               string `json:"id"`
+	IP               string `json:"ip"`
+	URL              string `json:"url"`
+	Moniker          string `json:"moniker"`
+	ValidatorAddress string `json:"validatorAddress"`
+	ValidatorMoniker string `json:"validatorMoniker"`
+}
+
+func NewRPCFromPeer(peer Peer) RPC {
+	return RPC{
+		ID:      string(peer.NodeInfo.DefaultNodeID),
+		IP:      peer.RemoteIP,
+		URL:     peer.URL(),
+		Moniker: peer.NodeInfo.Moniker,
+	}
 }
 
 func NewState(firstRPC string) *State {
-	knownRPCs := utils.NewOrderedMap[string, RPC]()
-	knownRPCs.Set(firstRPC, RPC{firstRPC, ""})
 	return &State{
-		Height:          0,
-		Round:           0,
-		Step:            0,
-		Validators:      nil,
-		ChainValidators: nil,
-		StartTime:       time.Now(),
-		BlockTime:       0,
-		currentRPC:      firstRPC,
-		knownRPCs:       knownRPCs,
-		muRPCs:          &sync.RWMutex{},
+		Height:             0,
+		Round:              0,
+		Step:               0,
+		Validators:         nil,
+		ChainValidators:    nil,
+		validatorsByPeerID: make(map[string]Validator),
+		StartTime:          time.Now(),
+		BlockTime:          0,
+		currentRPC:         firstRPC,
+		knownRPCs:          utils.NewOrderedMap[string, RPC](),
+		rpcPeers:           utils.NewOrderedMap[string, []Peer](),
+		muRPCs:             &sync.RWMutex{},
 	}
 }
 
@@ -78,7 +95,10 @@ func (s *State) CurrentRPC() RPC {
 	s.muRPCs.RLock()
 	defer s.muRPCs.RUnlock()
 
-	rpc, _ := s.knownRPCs.Get(s.currentRPC)
+	rpc, ok := s.knownRPCs.Get(s.currentRPC)
+	if !ok {
+		return RPC{URL: s.currentRPC}
+	}
 	return rpc
 }
 
@@ -89,11 +109,19 @@ func (s *State) SetCurrentRPCURL(rpcURL string) {
 	s.currentRPC = rpcURL
 }
 
-func (s *State) KnownRPCs() []RPC {
+func (s *State) KnownRPCByURL(url string) (RPC, bool) {
 	s.muRPCs.RLock()
 	defer s.muRPCs.RUnlock()
 
-	return s.knownRPCs.Values()
+	rpc, ok := s.knownRPCs.Get(url)
+	return rpc, ok
+}
+
+func (s *State) KnownRPCs() *utils.OrderedMap[string, RPC] {
+	s.muRPCs.RLock()
+	defer s.muRPCs.RUnlock()
+
+	return s.knownRPCs.Copy()
 }
 
 func (s *State) AddKnownRPC(rpc RPC) {
@@ -117,6 +145,30 @@ func (s *State) RPCAtIndex(index int) (RPC, bool) {
 
 	_, rpc, ok := s.knownRPCs.GetByIndex(index)
 	return rpc, ok
+}
+
+func (s *State) AddRPCPeers(rpcURL string, peers []Peer) {
+	s.muRPCs.Lock()
+	defer s.muRPCs.Unlock()
+
+	s.rpcPeers.Set(rpcURL, peers)
+}
+
+func (s *State) RPCPeers(rpcURL string) []Peer {
+	s.muRPCs.RLock()
+	defer s.muRPCs.RUnlock()
+
+	peers, _ := s.rpcPeers.Get(rpcURL)
+	return peers
+}
+
+func (s *State) ValidatorByPeerID(peerID string) (Validator, bool) {
+	val, ok := s.validatorsByPeerID[strings.ToLower(peerID)]
+	return val, ok
+}
+
+func (s *State) ValidatorsByPeerID() map[string]Validator {
+	return maps.Clone(s.validatorsByPeerID)
 }
 
 func (s *State) SetTendermintResponse(
@@ -143,6 +195,10 @@ func (s *State) SetTendermintResponse(
 	}
 
 	s.ValidatorsWithAllRoundsVotes = &validatorsWithAllRounds
+
+	for _, val := range validators {
+		s.validatorsByPeerID[strings.ToLower(string(val.Validator.PeerID))] = val.Validator
+	}
 
 	return nil
 }

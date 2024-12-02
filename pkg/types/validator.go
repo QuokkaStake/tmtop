@@ -5,6 +5,8 @@ import (
 	"main/pkg/utils"
 	"math/big"
 	"strconv"
+
+	"github.com/cometbft/cometbft/p2p"
 )
 
 type Validator struct {
@@ -12,6 +14,8 @@ type Validator struct {
 	Address            string
 	VotingPower        *big.Int
 	VotingPowerPercent *big.Float
+	PubKey             []byte
+	PeerID             p2p.ID
 }
 
 type Validators []Validator

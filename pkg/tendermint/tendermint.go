@@ -103,9 +103,11 @@ func (rpc *RPC) GetValidatorsViaDumpConsensusState() ([]types.TendermintValidato
 	return response.Result.RoundState.Validators.Validators, nil
 }
 
-func (rpc *RPC) GetStatus() (*types.TendermintStatusResponse, error) {
+func (rpc *RPC) GetStatus(rpcURL string) (*types.TendermintStatusResponse, error) {
+	client := http.NewClient(rpc.Logger, "tendermint_rpc", rpcURL)
+
 	var response types.TendermintStatusResponse
-	if err := rpc.client().Get("/status", &response); err != nil {
+	if err := client.Get("/status", &response); err != nil {
 		return nil, err
 	}
 

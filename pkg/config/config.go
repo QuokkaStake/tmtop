@@ -23,6 +23,8 @@ type InputConfig struct {
 	BlocksBehind          uint64
 	LCDHost               string
 	Timezone              string
+	WithTopologyAPI       bool
+	TopologyListenAddr    string
 }
 
 type ChainType string
@@ -99,6 +101,8 @@ func ParseAndValidateConfig(input InputConfig) (*Config, error) {
 		BlocksBehind:          input.BlocksBehind,
 		LCDHost:               input.LCDHost,
 		Timezone:              timezone,
+		WithTopologyAPI:       input.WithTopologyAPI,
+		TopologyListenAddr:    input.TopologyListenAddr,
 	}
 
 	return config, nil
@@ -121,6 +125,8 @@ type Config struct {
 	BlocksBehind          uint64
 	LCDHost               string
 	Timezone              *time.Location
+	WithTopologyAPI       bool
+	TopologyListenAddr    string
 }
 
 func (c Config) GetProviderOrConsumerHost() string {

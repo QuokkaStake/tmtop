@@ -5,8 +5,11 @@ import (
 	"main/pkg/aggregator"
 	configPkg "main/pkg/config"
 	"main/pkg/display"
+	tmhttp "main/pkg/http"
 	loggerPkg "main/pkg/logger"
+	"main/pkg/topology"
 	"main/pkg/types"
+	"strings"
 	"sync"
 	"time"
 
@@ -23,7 +26,7 @@ type App struct {
 	State          *types.State
 	LogChannel     chan string
 
-	mbRPCURLs        *utils.Mailbox[types.RPC]
+	mbRPCURLs        *utils.Mailbox[string]
 	rpcURLsLastFetch map[string]time.Time
 
 	PauseChannel chan bool
@@ -49,7 +52,7 @@ func NewApp(config *configPkg.Config, version string) *App {
 		DisplayWrapper:   display.NewWrapper(config, state, logger, pauseChannel, version),
 		State:            state,
 		LogChannel:       logChannel,
-		mbRPCURLs:        utils.NewMailbox[types.RPC](1000),
+		mbRPCURLs:        utils.NewMailbox[string](1000),
 		rpcURLsLastFetch: make(map[string]time.Time),
 		PauseChannel:     pauseChannel,
 		IsPaused:         false,
@@ -57,6 +60,11 @@ func NewApp(config *configPkg.Config, version string) *App {
 }
 
 func (a *App) Start() {
+	if a.Config.WithTopologyAPI {
+		go a.ServeTopology()
+		topology.LogChannel = a.LogChannel
+	}
+
 	go a.CrawlRPCURLs()
 
 	go a.GoRefreshConsensus()
@@ -71,47 +79,98 @@ func (a *App) Start() {
 	a.DisplayWrapper.Start()
 }
 
+func (a *App) ServeTopology() {
+	_ = tmhttp.NewServer(
+		a.Config.TopologyListenAddr,
+		topology.WithHTTPTopologyAPI(a.State),
+		topology.WithHTTPPeersAPI(a.State),
+		topology.WithHTTPDebugAPI(a.State),
+		topology.WithFrontendStaticAssets(),
+	).Serve()
+}
+
 func (a *App) CrawlRPCURLs() {
-	a.mbRPCURLs.Deliver(types.RPC{URL: a.Config.RPCHost})
+	a.mbRPCURLs.Deliver(a.Config.RPCHost)
+	// a.fetchNewPeers(a.Config.RPCHost)
 	timer := time.NewTimer(15 * time.Second)
 
 	for {
 		select {
 		case <-a.mbRPCURLs.Notify():
 			var wg sync.WaitGroup
-			for _, rpc := range a.mbRPCURLs.RetrieveAll() {
-				if lastFetch, ok := a.rpcURLsLastFetch[rpc.URL]; ok && time.Now().Sub(lastFetch) < 15*time.Second {
+			for _, url := range a.mbRPCURLs.RetrieveAll() {
+				if lastFetch, ok := a.rpcURLsLastFetch[url]; ok && time.Now().Sub(lastFetch) < 15*time.Second {
 					continue
 				}
-				a.rpcURLsLastFetch[rpc.URL] = time.Now()
-				a.State.AddKnownRPC(rpc)
+				a.rpcURLsLastFetch[url] = time.Now()
 
-				rpc := rpc
+				url := url
 				wg.Add(1)
 				go func() {
 					defer wg.Done()
 
-					netInfo, err := a.Aggregator.GetNetInfo(rpc.URL)
-					if err != nil {
-						a.LogChannel <- fmt.Sprintf("error getting net_info from %s: %v", rpc.URL, err)
-						return
-					}
-
-					for _, peer := range netInfo.Peers {
-						a.mbRPCURLs.Deliver(types.RPC{URL: "http://" + peer.RemoteIP + ":26657", Moniker: peer.NodeInfo.Moniker})
-					}
+					a.fetchRPCInfo(url)
 				}()
 			}
 			wg.Wait()
 
 		case <-timer.C:
-			for _, rpc := range a.State.KnownRPCs() {
+			for _, rpc := range a.State.KnownRPCs().Iter() {
 				if time.Since(a.rpcURLsLastFetch[rpc.URL]) >= 15*time.Second {
-					a.mbRPCURLs.Deliver(rpc)
+					a.mbRPCURLs.Deliver(rpc.URL)
 				}
 			}
 		}
 
+	}
+}
+
+func (a *App) fetchRPCInfo(rpcURL string) {
+	netInfo, err := a.Aggregator.GetNetInfo(rpcURL)
+	if err != nil {
+		a.LogChannel <- fmt.Sprintf("error getting /net_info from %s: %v", rpcURL, err)
+		return
+	}
+
+	status, err := a.Aggregator.GetChainInfo(rpcURL)
+	if err != nil {
+		a.LogChannel <- fmt.Sprintf("error getting /status from %s: %v", rpcURL, err)
+		return
+	}
+
+	var rpc types.RPC
+	if known, ok := a.State.KnownRPCByURL(rpcURL); ok {
+		rpc = known
+	}
+	rpc.ID = status.Result.NodeInfo.ID
+	rpc.URL = rpcURL
+	rpc.Moniker = status.Result.NodeInfo.Moniker
+	rpc.ValidatorAddress = status.Result.ValidatorInfo.Address
+
+	if status.Result.ValidatorInfo.Address != "" && a.State.ChainValidators != nil {
+		for _, cv := range *a.State.ChainValidators {
+			if strings.ToLower(cv.Address) == strings.ToLower(rpc.ValidatorAddress) {
+				rpc.ValidatorMoniker = cv.Moniker
+				break
+			}
+		}
+	}
+
+	a.State.AddKnownRPC(rpc)
+
+	a.State.AddRPCPeers(rpcURL, netInfo.Peers)
+	for _, peer := range netInfo.Peers {
+		var peerRPC types.RPC
+		if known, ok := a.State.KnownRPCByURL(peer.URL()); ok {
+			peerRPC = known
+		}
+		peerRPC.ID = string(peer.NodeInfo.DefaultNodeID)
+		peerRPC.IP = peer.RemoteIP
+		peerRPC.URL = peer.URL()
+		peerRPC.Moniker = peer.NodeInfo.Moniker
+		a.State.AddKnownRPC(peerRPC)
+
+		a.mbRPCURLs.Deliver(peer.URL())
 	}
 }
 
@@ -215,7 +274,7 @@ func (a *App) RefreshChainInfo() {
 		return
 	}
 
-	chainInfo, err := a.Aggregator.GetChainInfo()
+	chainInfo, err := a.Aggregator.GetChainInfo(a.State.CurrentRPC().URL)
 	if err != nil {
 		a.Logger.Error().Err(err).Msg("Error getting chain validators")
 		a.State.SetChainInfoError(err)

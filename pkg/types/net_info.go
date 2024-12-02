@@ -3,6 +3,7 @@ package types
 import (
 	"fmt"
 	"math"
+	"net/url"
 	"reflect"
 	"strconv"
 	"time"
@@ -22,6 +23,14 @@ type Peer struct {
 	IsOutbound       bool             `mapstructure:"is_outbound"`
 	ConnectionStatus ConnectionStatus `mapstructure:"connection_status"`
 	RemoteIP         string           `mapstructure:"remote_ip"`
+}
+
+func (p Peer) URL() string {
+	u, err := url.Parse(p.NodeInfo.Other.RPCAddress)
+	if err != nil {
+		return "http://" + p.RemoteIP + ":26657"
+	}
+	return "http" + "://" + p.RemoteIP + ":" + u.Port()
 }
 
 type DefaultNodeInfo struct {
@@ -57,34 +66,34 @@ type ProtocolVersion struct {
 type ID string
 
 type ConnectionStatus struct {
-	Duration    NanoDuration
-	SendMonitor FlowStatus
-	RecvMonitor FlowStatus
-	Channels    []ChannelStatus
+	Duration    NanoDuration    `json:"duration"`
+	SendMonitor FlowStatus      `json:"send_monitor"`
+	RecvMonitor FlowStatus      `json:"recv_monitor"`
+	Channels    []ChannelStatus `json:"channels"`
 }
 
 type ChannelStatus struct {
-	ID                byte
-	SendQueueCapacity string
-	SendQueueSize     string
-	Priority          string
-	RecentlySent      string
+	ID                byte   `json:"id"`
+	SendQueueCapacity string `json:"send_queue_capacity"`
+	SendQueueSize     string `json:"send_queue_size"`
+	Priority          string `json:"priority"`
+	RecentlySent      string `json:"recently_sent"`
 }
 
 type FlowStatus struct {
-	Start    CustomTime   // Transfer start time
-	Bytes    ByteSize     // Total number of bytes transferred
-	Samples  ByteSize     // Total number of samples taken
-	InstRate ByteSize     // Instantaneous transfer rate
-	CurRate  ByteSize     // Current transfer rate (EMA of InstRate)
-	AvgRate  ByteSize     // Average transfer rate (Bytes / Duration)
-	PeakRate ByteSize     // Maximum instantaneous transfer rate
-	BytesRem ByteSize     // Number of bytes remaining in the transfer
-	Duration NanoDuration // Time period covered by the statistics
-	Idle     NanoDuration // Time since the last transfer of at least 1 byte
-	TimeRem  NanoDuration // Estimated time to completion
-	Progress Percent      // Overall transfer progress
-	Active   bool         // Flag indicating an active transfer
+	Start    CustomTime   `json:"start"`     // Transfer start time
+	Bytes    ByteSize     `json:"bytes"`     // Total number of bytes transferred
+	Samples  ByteSize     `json:"samples"`   // Total number of samples taken
+	InstRate ByteSize     `json:"inst_rate"` // Instantaneous transfer rate
+	CurRate  ByteSize     `json:"cur_rate"`  // Current transfer rate (EMA of InstRate)
+	AvgRate  ByteSize     `json:"avg_rate"`  // Average transfer rate (Bytes / Duration)
+	PeakRate ByteSize     `json:"peak_rate"` // Maximum instantaneous transfer rate
+	BytesRem ByteSize     `json:"bytes_rem"` // Number of bytes remaining in the transfer
+	Duration NanoDuration `json:"duration"`  // Time period covered by the statistics
+	Idle     NanoDuration `json:"idle"`      // Time since the last transfer of at least 1 byte
+	TimeRem  NanoDuration `json:"time_rem"`  // Estimated time to completion
+	Progress Percent      `json:"progress"`  // Overall transfer progress
+	Active   bool         `json:"active"`    // Flag indicating an active transfer
 }
 
 type NanoDuration time.Duration

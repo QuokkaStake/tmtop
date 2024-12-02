@@ -13,10 +13,6 @@ import (
 	"strconv"
 	"strings"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-
-	"github.com/cometbft/cometbft/crypto/secp256k1"
-
 	"github.com/cosmos/cosmos-sdk/x/auth/tx"
 	genutilTypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
 
@@ -109,12 +105,6 @@ func (f *CosmosRPCDataFetcher) AbciQuery(
 	return output.Unmarshal(response.Result.Response.Value)
 }
 
-func validatorAddr(pubkeyBytes []byte) string {
-	pubkey := secp256k1.PubKey(pubkeyBytes)
-	pubKeyConvertedToAddress := sdk.ValAddress(pubkey.Address().Bytes())
-	return pubKeyConvertedToAddress.String()
-}
-
 func (f *CosmosRPCDataFetcher) ParseValidator(validator stakingTypes.Validator) (types.ChainValidator, error) {
 	if err := validator.UnpackInterfaces(f.ParseCodec); err != nil {
 		return types.ChainValidator{}, err
@@ -126,9 +116,10 @@ func (f *CosmosRPCDataFetcher) ParseValidator(validator stakingTypes.Validator) 
 	}
 
 	return types.ChainValidator{
-		Moniker:    validator.GetMoniker(),
-		Address:    fmt.Sprintf("%X", addr),
-		RawAddress: sdkTypes.ConsAddress(addr).String(),
+		Moniker:         validator.GetMoniker(),
+		Address:         fmt.Sprintf("%X", addr),
+		RawAddress:      sdkTypes.ConsAddress(addr).String(),
+		ConsensusPubkey: validator.ConsensusPubkey.Value,
 	}, nil
 }
 
