@@ -109,7 +109,7 @@ func (d *LastRoundTableData) redrawData() {
 			index := row*d.ColumnsCount + column
 
 			if d.Transpose {
-				rows := d.GetRowCount()
+				rows := len(d.cells)
 				index = column*rows + row
 			}
 
