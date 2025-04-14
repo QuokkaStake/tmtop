@@ -225,9 +225,12 @@ func (w *Wrapper) SetState(state *types.State) {
 	w.LastRoundTableData.SetValidators(
 		state.GetValidatorsWithInfo(),
 		state.ConsensusStateError,
-		state.ChainInfo.ValidatorInfo,
+		state.NodeStatus,
 	)
-	w.AllRoundsTableData.SetValidators(state.GetValidatorsWithInfoAndAllRoundVotes())
+	w.AllRoundsTableData.SetValidators(
+		state.GetValidatorsWithInfoAndAllRoundVotes(),
+		state.NodeStatus,
+	)
 
 	w.ConsensusInfoTextView.Clear()
 	w.ChainInfoTextView.Clear()

@@ -80,11 +80,15 @@ func (d *LastRoundTableData) GetColumnCount() int {
 func (d *LastRoundTableData) SetValidators(
 	validators types.ValidatorsWithInfo,
 	consensusError error,
-	validatorInfo types.TendermintValidatorInfo,
+	statusResult *types.TendermintStatusResult,
 ) {
 	d.Validators = validators
 	d.ConsensusError = consensusError
-	d.CurrentValidatorAddress = validatorInfo.Address
+
+	if statusResult != nil {
+		d.CurrentValidatorAddress = statusResult.ValidatorInfo.Address
+	}
+
 	d.redrawData()
 }
 
