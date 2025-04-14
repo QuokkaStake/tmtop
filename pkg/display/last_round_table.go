@@ -12,11 +12,12 @@ import (
 type LastRoundTableData struct {
 	tview.TableContentReadOnly
 
-	Validators     types.ValidatorsWithInfo
-	ConsensusError error
-	ColumnsCount   int
-	DisableEmojis  bool
-	Transpose      bool
+	Validators              types.ValidatorsWithInfo
+	CurrentValidatorAddress string
+	ConsensusError          error
+	ColumnsCount            int
+	DisableEmojis           bool
+	Transpose               bool
 
 	cells [][]*tview.TableCell
 	mutex sync.Mutex
@@ -76,9 +77,14 @@ func (d *LastRoundTableData) GetColumnCount() int {
 	return len(d.cells[0])
 }
 
-func (d *LastRoundTableData) SetValidators(validators types.ValidatorsWithInfo, consensusError error) {
+func (d *LastRoundTableData) SetValidators(
+	validators types.ValidatorsWithInfo,
+	consensusError error,
+	validatorInfo types.TendermintValidatorInfo,
+) {
 	d.Validators = validators
 	d.ConsensusError = consensusError
+	d.CurrentValidatorAddress = validatorInfo.Address
 	d.redrawData()
 }
 
@@ -123,6 +129,10 @@ func (d *LastRoundTableData) redrawData() {
 
 			if index < len(d.Validators) && d.Validators[index].RoundVote.IsProposer {
 				cell.SetBackgroundColor(tcell.ColorForestGreen)
+			}
+
+			if index < len(d.Validators) && d.Validators[index].Validator.Address == d.CurrentValidatorAddress {
+				cell.SetBackgroundColor(tcell.ColorMediumTurquoise)
 			}
 
 			d.cells[row][column] = cell
