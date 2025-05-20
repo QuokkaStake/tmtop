@@ -5,10 +5,15 @@ type TendermintStatusResponse struct {
 }
 
 type TendermintStatusResult struct {
-	NodeInfo TendermintNodeInfo `json:"node_info"`
+	NodeInfo      TendermintNodeInfo      `json:"node_info"`
+	ValidatorInfo TendermintValidatorInfo `json:"validator_info"`
 }
 
 type TendermintNodeInfo struct {
 	Version string `json:"version"`
 	Network string `json:"network"`
+}
+
+type TendermintValidatorInfo struct {
+	Address string `json:"address"`
 }

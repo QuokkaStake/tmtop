@@ -161,13 +161,13 @@ func (a *App) RefreshChainInfo() {
 	chainInfo, err := a.Aggregator.GetChainInfo()
 	if err != nil {
 		a.Logger.Error().Err(err).Msg("Error getting chain validators")
-		a.State.SetChainInfoError(err)
+		a.State.SetStatusError(err)
 		a.DisplayWrapper.SetState(a.State)
 		return
 	}
 
-	a.State.SetChainInfo(&chainInfo.Result)
-	a.State.SetChainInfoError(err)
+	a.State.SetNodeStatus(&chainInfo.Result)
+	a.State.SetStatusError(err)
 	a.DisplayWrapper.SetState(a.State)
 }
 

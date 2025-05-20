@@ -13,9 +13,10 @@ import (
 type AllRoundsTableData struct {
 	tview.TableContentReadOnly
 
-	Validators    types.ValidatorsWithInfoAndAllRoundVotes
-	DisableEmojis bool
-	Transpose     bool
+	Validators              types.ValidatorsWithInfoAndAllRoundVotes
+	CurrentValidatorAddress string
+	DisableEmojis           bool
+	Transpose               bool
 
 	cells [][]*tview.TableCell
 	mutex sync.Mutex
@@ -63,12 +64,20 @@ func (d *AllRoundsTableData) GetColumnCount() int {
 	return len(d.cells[0])
 }
 
-func (d *AllRoundsTableData) SetValidators(validators types.ValidatorsWithInfoAndAllRoundVotes) {
+func (d *AllRoundsTableData) SetValidators(
+	validators types.ValidatorsWithInfoAndAllRoundVotes,
+	statusResult *types.TendermintStatusResult,
+) {
 	if d.Validators.Equals(validators) {
 		return
 	}
 
 	d.Validators = validators
+
+	if statusResult != nil {
+		d.CurrentValidatorAddress = statusResult.ValidatorInfo.Address
+	}
+
 	d.redrawCells()
 }
 
@@ -122,6 +131,10 @@ func (d *AllRoundsTableData) redrawCells() {
 
 			if roundVote.IsProposer {
 				cell.SetBackgroundColor(tcell.ColorForestGreen)
+			}
+
+			if roundVote.Address == d.CurrentValidatorAddress {
+				cell.SetBackgroundColor(tcell.ColorMediumTurquoise)
 			}
 
 			d.cells[row][column] = cell

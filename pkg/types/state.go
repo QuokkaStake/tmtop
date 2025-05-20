@@ -14,7 +14,7 @@ type State struct {
 	Validators                   *ValidatorsWithRoundVote
 	ValidatorsWithAllRoundsVotes *ValidatorsWithAllRoundsVotes
 	ChainValidators              *ChainValidators
-	ChainInfo                    *TendermintStatusResult
+	NodeStatus                   *TendermintStatusResult
 	StartTime                    time.Time
 	Upgrade                      *Upgrade
 	BlockTime                    time.Duration
@@ -23,7 +23,7 @@ type State struct {
 	ValidatorsError      error
 	ChainValidatorsError error
 	UpgradePlanError     error
-	ChainInfoError       error
+	StatusError          error
 }
 
 func NewState() *State {
@@ -70,8 +70,8 @@ func (s *State) SetChainValidators(validators *ChainValidators) {
 	s.ChainValidators = validators
 }
 
-func (s *State) SetChainInfo(info *TendermintStatusResult) {
-	s.ChainInfo = info
+func (s *State) SetNodeStatus(status *TendermintStatusResult) {
+	s.NodeStatus = status
 }
 
 func (s *State) SetUpgrade(upgrade *Upgrade) {
@@ -94,8 +94,8 @@ func (s *State) SetUpgradePlanError(err error) {
 	s.UpgradePlanError = err
 }
 
-func (s *State) SetChainInfoError(err error) {
-	s.ChainInfoError = err
+func (s *State) SetStatusError(err error) {
+	s.StatusError = err
 }
 
 func (s *State) SerializeConsensus(timezone *time.Location) string {
@@ -169,11 +169,11 @@ func (s *State) SerializeConsensus(timezone *time.Location) string {
 func (s *State) SerializeChainInfo(timezone *time.Location) string {
 	var sb strings.Builder
 
-	if s.ChainInfoError != nil {
-		sb.WriteString(fmt.Sprintf(" chain info fetch error: %s\n", s.ChainInfoError.Error()))
-	} else if s.ChainInfo != nil {
-		sb.WriteString(fmt.Sprintf(" chain name: %s\n", s.ChainInfo.NodeInfo.Network))
-		sb.WriteString(fmt.Sprintf(" tendermint version: v%s\n", s.ChainInfo.NodeInfo.Version))
+	if s.StatusError != nil {
+		sb.WriteString(fmt.Sprintf(" chain info fetch error: %s\n", s.StatusError.Error()))
+	} else if s.NodeStatus != nil {
+		sb.WriteString(fmt.Sprintf(" chain name: %s\n", s.NodeStatus.NodeInfo.Network))
+		sb.WriteString(fmt.Sprintf(" tendermint version: v%s\n", s.NodeStatus.NodeInfo.Version))
 
 		if s.BlockTime != 0 {
 			sb.WriteString(fmt.Sprintf(" avg block time: %s\n", utils.SerializeDuration(s.BlockTime)))
